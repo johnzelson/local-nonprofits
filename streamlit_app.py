@@ -570,7 +570,7 @@ def main():
                 f'<!-- table class="table table-striped table-hover table-condensed table-responsive"-->'
                 f'<table class="table table-striped table-hover table-condensed table-responsive">'
                 f'<tr> '
-                f'<td> Name:</td> <td>  {df_dict['NAME']} </td> '
+                f'<td> Name:</td> <td>  {df_dict["NAME"]} </td> '
                 f'</tr> '
                 f'<tr> '
                 f'<td> Post Addr:</td> <td> {df_dict['STREET']}, {df_dict['CITY']} {df_dict['ZIP']}</td> '
