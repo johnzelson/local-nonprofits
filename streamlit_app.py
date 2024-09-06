@@ -618,46 +618,6 @@ def main():
             st.header('Dashboard Card Title')
             st.text('Some interesting insights')
 
-
-        with stylable_container(
-            key="green_button",
-            css_styles="""
-                button {
-                    background-color: green;
-                    color: white;
-                    border-radius: 20px;
-                }
-                """,
-            ):
-            st.button("Green button")
-
-            st.button("Normal button")
-
-
-            with st.container():
-                with stylable_container(
-                    key="container_with_border",
-                    css_styles="""
-                        {
-                            border: 1px solid rgba(49, 51, 63, 0.2);
-                            border-radius: 0.5rem;
-                            padding: calc(1em - 1px);
-                            font-weight: bold;
-                        }
-                        """,
-                ):
-                    t = df_dict['NAME']
-                    st.markdown(f" {t} ")
-                
-                st.write("content stuff")
-
-
-            with st.container():
-                st.title("My First Card")
-                st.write("Here's some text inside my first card!")
-                st.write("This is inside a card!")
-
-
     with testtab:
         st.write("test tab")
         st.subheader("Org Basics")
