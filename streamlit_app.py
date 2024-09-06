@@ -19,13 +19,13 @@ import math
 import streamlit.components.v1 as components
 
 # test 3rd party options for layout
-from streamlit_card import card 
-from streamlit_extras.stylable_container import stylable_container 
-from streamlit_extras.colored_header import colored_header
-from streamlit_extras.grid import grid
+#from streamlit_card import card 
+#from streamlit_extras.stylable_container import stylable_container 
+#from streamlit_extras.colored_header import colored_header
+#from streamlit_extras.grid import grid
 
-from streamlit_elements import elements, mui, html
-from streamlit_elements import dashboard
+#from streamlit_elements import elements, mui, html
+#from streamlit_elements import dashboard
 
 
 APP_TITLE = 'Mapping Nonprofits'
