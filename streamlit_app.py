@@ -150,10 +150,10 @@ def get_map_popup(row, df) :
     return (f'<div>'
     f'<table class="table table-striped table-hover table-condensed table-responsive">'
     f'<tr> '
-    f'<td> Name:</td> <td>  {row.NAME} </td> '
+    f"<td> Name:</td> <td>  {row.NAME} </td> "
     f'</tr> '
     f'<tr> '
-    f'<td> Post Addr:</td> <td> {row.STREET}, {row.CITY} </td> '
+    f"<td> Post Addr:</td> <td> {row.STREET}, {row.CITY} </td> "
     f'</tr> </table>')
 
 
@@ -196,8 +196,8 @@ def get_popup (row):
     # website
     if not pd.isnull(row.WebsiteAddressTxt):
         if row.WebsiteAddressTxt == 'tag_not_found':
-            web_url = (f'<a href=\"{row.url}\" '
-                    f' target=\"_blank\"> {row.found_name} (web search) </a>')
+            web_url = (f"<a href=\"{row.url}\" "
+                    f" target=\"_blank\"> {row.found_name} (web search) </a>")
         else:
             web_url = (f'<a href=\"https://{row.WebsiteAddressTxt}\" '
                     f' target=\"_blank\"> {row.WebsiteAddressTxt} (IRS)</a>')
@@ -893,20 +893,20 @@ def main():
                 f'<table class="table table-striped table-hover table-condensed table-responsive">'
                 f'<tr> '
                 f"<td> Name:</td> <td>  {df_dict['NAME']} </td> "
-                f"</tr> "
-                f"<tr> "
-                f"<td> Post Addr:</td> <td> {df_dict['STREET']}, {df_dict['CITY']} {df_dict['ZIP']}</td> "
-                f"</tr> "
+                f'</tr> '
                 f'<tr> '
-                f'<td> IRS Contact:</td> <td> {df_dict['ICO']} </td> '
+                f"<td> Post Addr:</td> <td> {df_dict['STREET']}, {df_dict['CITY']} {df_dict['ZIP']}</td> "
+                f'</tr> '
+                f'<tr> '
+                f"<td> IRS Contact:</td> <td> {df_dict['ICO']} </td> "
                 f'</tr> '
 
                 f'<tr> '
-                f'<td> EIN:</td> <td> {df_dict['EIN']} </td> '
+                f"<td> EIN:</td> <td> {df_dict['EIN']} </td> "
                 f'</tr> '
                 f'<tr> '
                 f'<td> Subsection </td>'
-                f'<td> 501c({df_dict['SUBSECTION']}) </td>'
+                f"<td> 501c({df_dict['SUBSECTION']}) </td>"
                 f'</tr> ' 
                               
                 f'</table>'
