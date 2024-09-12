@@ -1,24 +1,26 @@
 # installs
 # py -m pip install streamlit
 # py -m pip install pandas
-# py -m pip install folium
+# py -m pip install folium              # don't need as streamlit-folium 
 # py -m pip install streamlit_folium
 # py -m pip install geopandas
-# py -m pip install streamlit-card
-# py -m pip install streamlit_extras
-# py -m pip install streamlit-elements==0.1.*
+# py -m pip install streamlit-card              # testing
+# py -m pip install streamlit_extras            # testing
+# py -m pip install streamlit-elements==0.1.*   # testing
 
-
+# python -m streamlit run your_script.py
 
 import streamlit as st
 import pandas as pd
-import folium
+import folium  #TODO: is needed, but didn't install 
 from streamlit_folium import st_folium
 import geopandas as gpd
 import math
-import streamlit.components.v1 as components
+
+
 
 # test 3rd party options for layout
+#import streamlit.components.v1 as components
 #from streamlit_card import card 
 #from streamlit_extras.stylable_container import stylable_container 
 #from streamlit_extras.colored_header import colored_header
@@ -35,7 +37,7 @@ APP_SUB_TITLE = 'Source:  IRS Tax Returns and APS for Census, Congress, Bing '
 def np_change():
     mytoggle = True
 
-def do_sidebar(df, np_name):
+def do_sidebar(df, np_name, m):
     with st.sidebar:
 
         tab1, tab2, tab3, tab4 = st.tabs(["Nonprofits", "Selected", "Help", "Status"])
@@ -61,14 +63,19 @@ def do_sidebar(df, np_name):
             #selected_np = st.radio('Pick NP', np_list, index=np_index)
 
             selected_np = st.radio('Pick NP', np_list, 
-                                   index=np_index )
-            #                       key="np_radio")
+                                   index=np_index, 
+                                   key="np_radio")
             #                       on_change=np_change)
 
 
             st.session_state['selected_np'] = selected_np 
 
-            #st.session_state['selected_np'] = selected_np
+            # xxx test
+            if 'last_object_clicked_tooltip' in m:
+                st.write ("last map click:  ",  m['last_object_clicked_tooltip'])
+                st.write ("radio select:  ", selected_np)
+            else:
+                st.write("no m")
 
         with tab2:
             st.header("Selected")
@@ -300,47 +307,93 @@ def info_panel(np_dict):
     st.write(np_dict['STREET'])
 
 
-def display_map(cortland_geotaxweb_df, tracts_cc_gpd):
+def update_marker(m, coords):
+    fgs = folium.FeatureGroup(name="selected")
+
+    st.write(coords)
+    
+    fgs.add_child(
+        folium.Marker(
+                # location=coords,
+                location=[  42, -76 ],
+                popup=f"added popup"
+        )
+    )
+
+
+    d = st_folium(m)
+    #          center=[42.5,-76])
+
+    '''
+    folium.CircleMarker(    
+                location=coords,
+                popup=f"added popup",
+                tooltip=f"added tooltip",
+                icon=folium.Icon(color="green")
+    ).add_to(fgs)
+    '''
+    
+    out = st_folium(
+        m,
+        feature_group_to_add=fgs,
+    #    center=[42, -76]
+    )
+    
+
+def display_map(np_local_df, tracts_cc_gpd):
     import math
 
     m = folium.Map(
         location=[42.5,-76],
-        zoom_start=10
+        #center=[42.5,-76],  # returns world map vs location
+        zoom_start=10,
     )
+        # key="np_map"
+    #)
 
     # you can pass gdf to geojson
     folium.GeoJson(tracts_cc_gpd,
                 fill_opacity=0.1,
+                highlight=True,
                 popup=folium.GeoJsonPopup(fields=['NAME']),
                 name="Census Tracts").add_to(m)
-    group_1 = folium.FeatureGroup("NPs").add_to(m)
+    
+    nps = folium.FeatureGroup("NPs").add_to(m)
 
-    for index, row in cortland_geotaxweb_df.iterrows():
+
+    for index, row in np_local_df.iterrows():
 
         if not math.isnan(row['coord_x']):  # the data has po boxes with no lat long
 
             folium.CircleMarker(
+            #folium.Marker(    
                 location=[  row['coord_y'], row['coord_x'] ],
                 #folium.Marker(location=[ row['coord_x'], row['coord_y'] ],
                 fill=True,
-                Highlight=True,
-                # Highlight= True,
-                #highlight_function= lambda feat: {'fillColor': 'blue'},
+                #Highlight=True,
+                color = '#4cdc7c',
+                highlight= True,
+                # highlight_function= lambda feat: {'fillColor': '#00FF00'},
+                #highlight_function=lambda x: {"fillOpacity": 0.9},
+                #zoom_on_click=True,
                 #popup=row['NAME'],
                 #popup=folium.Popup(row['NAME']),
                 #popup=folium.Popup(html),
                 #popup=folium.Popup(get_popup(row), max_width=300),
                 #popup=folium.Popup(get_map_popup(row), max_width=300),
-                popup=folium.Popup(get_map_popup(row, cortland_geotaxweb_df), max_width=300),
+                popup=folium.Popup(get_map_popup(row, np_local_df), max_width=300),
                 #tooltip=row['NAME'],
                 tooltip = row.NAME,
                 #radius=15,
             # fill_color="#3db7e4"
-                ).add_to(group_1)
+                ).add_to(nps)
 
     folium.LayerControl().add_to(m)
 
-    st_map  = st_folium(m, width=700) #, returned_objects=["last_object_clicked"])
+
+
+    st_map  = st_folium(m, 
+                        width=700) #, returned_objects=["last_object_clicked"])
     
     selected_np = ''
     if st_map['last_active_drawing']:
@@ -348,22 +401,151 @@ def display_map(cortland_geotaxweb_df, tracts_cc_gpd):
         selected_np =  st_map["last_object_clicked_tooltip"]
         st.write ("selected np in map click: " + selected_np)
         st.session_state['selected_np'] = selected_np #hm, just in case
- 
-    return selected_np
+
+    return selected_np, st_map # experiment to return map...
+
+def display_section(sect, df_dict, present_lu):
+
+    sect_dict = {} # dict of list keys/fields in section
+
+    # load a dict, key of section, to manage presentation
+    for s in  present_lu:
+        sect_name = present_lu[s]['display_section']
+  
+        if sect_name not in sect_dict:
+            sect_dict[sect_name] = []
+
+        sect_dict[sect_name].append(s)
+
+    show_list = sect_dict[sect]
+
+    s = ''
+    tbl_html = "<hr> <table> " # class=\"my_table\">  "
+    tbl_html += "<tr> "
+#    tbl_html += "<tr> <td colspan=2 style=\"text-align: center; vertical-align: middle;\"> "
+    tbl_html += "<tr> <td colspan=2 class=\"my_cell_section\"> "
+    tbl_html +=  sect + "</td> </tr>"
 
 
-def org_basics(df_dict):
-    org_dict = {}
-    show_list = ['NAME', 'STREET', 'CITY', 'ICO',
-                    'ASSET_AMT', 'INCOME_AMT', 'REVENUE_AMT',
-                    'ntee_cat', 'WebsiteAddressTxt']
+    tbl_html += "<tr> "
     for s in show_list:
-        # st.write(df_dict[s])
-        # org_dict.update(df_dict[s])  # doesn't work??
-        org_dict[s] = df_dict[s]
+        
+        # tooltip info
+        h = "Definition: " + present_lu[s]['help'] + "(data source: " + present_lu[s]['source'] + ")<br>"
+        h += "(data element name:  " +  s + ")"
+        # tbl_html += "<td title=\"" + h + "\">"
+        tbl_html += "<td class=\"td_label\">"    
+        
+        # lookup field name to get a presentable label
+        present_s_name = present_lu[s]['display_name']
+        
+
+        tbl_html += "<div class=\"tooltip\">" + present_s_name 
+        tbl_html += "\t <span class=\"tooltiptext\">"
+        tbl_html += h  
+        tbl_html += "\t </span>"
+        tbl_html += "</div>"
+        tbl_html += "</td>"
+        tbl_html += "<td>"
+
+
+        #TODO: more graceful handling of null, tag not found, and problems with presentat lu    
+        #TODO: in S2, used Tag not in file. fixed, but need to regenerate
+        if (s in df_dict 
+            and df_dict[s] not in ["tag_not_found", "Tag not in file"]):  
+
+            try:
+
+                if present_lu[s]['format'] == 'int':   
+                    tbl_html += str(int(df_dict[s])) 
+
+                elif present_lu[s]['format'] == 'currency':    
+                    val = float(df_dict[s])    
+                    val_string = '${:,.0f}'.format(val)
+                    tbl_html += val_string
+                elif present_lu[s]['format'] == 'link':
+                        tbl_html += f"<a href=\"https://{df_dict[s]}\"  target=\"_blank\" rel=\"noopener noreferrer \"> "
+                        tbl_html += f"{df_dict[s]}</a> "
+                elif present_lu[s]['format'] == "cap":   # narratives in sentence case, instead of all caps
+                    tbl_html += str(df_dict[s]).capitalize()
+                
+                else:
+                    tbl_html +=   str(df_dict[s])
+
+            except:
+                tbl_html += "ERROR: "
+                tbl_html +=  "df_dict s: (" + str(df_dict[s]) + ") <br>"
+                tbl_html +=  "present_lu s: " + str(present_lu[s]) + "<br>"
+                tbl_html +=  "s: " + s
+        else:
+            if not s in df_dict:
+                tbl_html += "This tag in presentation, but not in df"
+            else:
+                tbl_html += "(tnf)"
+
+        tbl_html += "</td> </tr>"
     #org_dict = df_dict.fromkeys(show_list, 0)
     # st.write(org_dict)
-    # st.table(org_dict)
+    
+    tbl_html += "</table>"
+    st.html (tbl_html)
+
+
+
+def org_basics(df_dict, present_lu):
+    # tweaking to display it
+    org_dict = {}
+    show_list = ['NAME', 'STREET', 'CITY', 'ICO',
+                    'ASSET_AMT', 'INCOME_AMT', 'REVENUE_AMT', 'GROUP',
+                    'ntee_cat', 'WebsiteAddressTxt']
+    
+    # hm, so far can't figure an easy to way to do 
+    # presentation stuff with this name-value table
+    # so using html
+    
+    tbl_html = "<table>  "
+    for s in show_list:
+        tbl_html += "<tr> "
+
+        # st.write(df_dict[s])
+        # org_dict.update(df_dict[s])  # doesn't work??
+        
+        h = "Definition: " + present_lu[s]['help'] + "(data source: " + present_lu[s]['source'] + ")"
+        # tbl_html += "<td title=\"" + h + "\">"
+        tbl_html += "<td>"    
+        # change keys in dict to presentable?
+        present_s_name = present_lu[s]['display_name']
+        
+        # present_s_help = present_lu[s][5]    
+        #org_dict[present_lu[s][1]] = df_dict[s] 
+        
+        tbl_html += "<div class=\"tooltip\">" + present_s_name 
+        tbl_html += " <span class=\"tooltiptext\">"
+        tbl_html += h  
+        tbl_html += "</span>"
+        tbl_html += "</div>"
+        # st.markdown(present_lu[s][1], help=h)     
+        tbl_html += "</td>"
+        tbl_html += "<td>"
+
+        if present_lu[s]['format'] == 'currency':    
+            val_string = '${:,.0f}'.format(df_dict[s])
+            tbl_html += val_string
+        elif present_lu[s]['format'] == 'link':
+            tbl_html += f"<a href=\"https://{df_dict[s]}\" rel=\"noopener noreferrer dofollow\" target=\"_blank\"> "
+            tbl_html += f"{df_dict[s]}</a> "
+            
+        else:
+            tbl_html +=  str(df_dict[s])
+        
+        tbl_html += "</td> </tr>"
+    #org_dict = df_dict.fromkeys(show_list, 0)
+    # st.write(org_dict)
+    
+    tbl_html += "</table>"
+    st.html (tbl_html)
+
+
     return org_dict
 
 def irs_basics(df_dict):
@@ -448,46 +630,160 @@ def get_web_srch(df_dict):
     return web_dict
 
 
+def get_presentation_lu():
+    # load present_lu used to convert data elements 
+    # into human readable labels with definitions
+    #TODO: merge this with processing lookup tables
+
+    import csv
+
+    present_lu = {}
+
+    with open('data/presentation_lookups.csv', mode='r') as infile:
+
+        reader = csv.reader(infile)
+        row_cnt = 1
+        for row in reader:
+            if row_cnt == 1:
+                keys = row
+                row_cnt += 1
+            else:
+                present_lu[row[1]] = dict(zip(keys, row))
+                row_cnt += 1
+
+        for fld_dict in present_lu:
+            del present_lu[fld_dict]['key_name']
+            del present_lu[fld_dict]['sample']
+
+    return present_lu
+
+
+def load_congress():
+    # verify, read the json into dict
+    import json
+    cong_dist = open('data/congress.json') 
+
+    # returns JSON object as  
+    # a dictionary 
+    cong_dict = json.load(cong_dist)
+    return cong_dict
+
+
+
 def main():
     st.set_page_config(APP_TITLE)
     st.title(APP_TITLE)
     st.caption(APP_SUB_TITLE)
 
+    # can i insert css here??
+    css_table = ''' 
+            <style>
+            
+            table {
+                /* border-collapse: collapse; */
+                width: 100%;
+                border: 1px;
+            }
+
+            th, td {
+                text-align: left;
+                padding: 3px;
+                /* border: 1px solid black;  */
+            }
+
+            td {
+                border: black 1px;
+                }
+
+            tr:nth-child(even) {background-color: #f2f2f2;}
+
+            .tooltip {
+                position: relative;
+                display: inline-block;
+                border-bottom: 1px dotted black;
+            }
+
+            .tooltip .tooltiptext {
+                visibility: hidden;
+                width: 300px; 
+                background-color: black;
+                color: #fff;
+                /* text-align: center; */
+                border-radius: 6px;
+                padding: 15px 15px 15px 15px; 
+                /* Position the tooltip */
+                position: absolute;
+                z-index: 1;
+            }
+
+            .tooltip:hover .tooltiptext {
+                visibility: visible;
+            }
+
+            .my_table{
+                border-collapse: collapse; 
+                width: 100%;
+                border: 1px;
+
+            }
+
+            .my_cell_section {
+                text-align: center; 
+                vertical-align: middle;
+                font-weight:  bold;
+            }
+
+                                                        
+            </style>
+
+        '''    
+
+    st.markdown (css_table, unsafe_allow_html=True)
+
     # load data
     # pre-processed in google colab
-    cortland_geotaxweb_df = pd.read_csv('data/cortland_geotaxweb_df.csv')
+
+    dtype = {"CLASSIFICATION": str,
+         "EIN" : str,
+         "ACTIVITY" : str,
+         "AFFILIATION" : str,
+         "ORGANIZATION" : str,
+         "FOUNDATION" : str,
+         "NTEE_CD" : str,
+         "RULING" : str,
+         "ZIP" : str,
+         "TAX_PERIOD" : str,
+         "GROUP" : str,
+         "cb_BASENAME" : int, 
+         "cb_BLKGRP" : int,
+         "cb_BLOCK": str,
+         "cb_GEOID" : str,
+         "ZipCd" : str
+         }
+
+    np_local_df = pd.read_csv('data/np_local_df.csv')
 
     # tracts for new york, filter to cortland county
-    tracts_gpd = gpd.read_file('data//tl_2022_36_tract.shp')
+    tracts_gpd = gpd.read_file('data/tl_2022_36_tract.shp')
     tracts_cc_gpd = tracts_gpd[tracts_gpd['COUNTYFP'] == '023']
+
+    cong_dist = load_congress()
 
     # Initialize session data
     
     #TODO: check-why put in session state? just put in sidebar?
     if 'np_list' not in st.session_state:
-        np_list = list(cortland_geotaxweb_df['NAME'])
+        np_list = list(np_local_df['NAME'])
         np_list.sort()
         st.session_state['np_list'] = np_list
 
     if 'num_nps' not in st.session_state:
-        (num_rows, num_facts) = cortland_geotaxweb_df.shape
+        (num_rows, num_facts) = np_local_df.shape
         st.session_state['num_rows'] = num_rows
         st.session_state['num_facts'] = num_facts
-
-    #  sidebar
-    #do_sidebar(cortland_geotaxweb_df)
-    #selected_np = st.session_state['selected_np']
-
-    # does it matter when i do sidebar?
-    #  sidebar
-
-    #if 'selected_np' in st.session_state:
-    #    selected_np = st.session_state['selected_np']
-    #else:
-    #    selected_np = np_list[0]
-
-    #selected_np = do_sidebar(cortland_geotaxweb_df, selected_np)
     
+
+    present_lu = get_presentation_lu()
 
 
     # main content area
@@ -497,10 +793,27 @@ def main():
     with tab1:
         #  ----------- map -----------------------
         selected_np = ''
-        selected_np = display_map(cortland_geotaxweb_df, tracts_cc_gpd)
-        selected_np = do_sidebar(cortland_geotaxweb_df, selected_np)
+        (selected_np, st_map) = display_map(np_local_df, tracts_cc_gpd)
+        selected_np = do_sidebar(np_local_df, selected_np, st_map)
         #TODO: when user selects from radio buttons, want to adjust map dynamically
         # https://folium.streamlit.app/dynamic_map_vs_rerender
+
+        
+        #st.write(st_map['last_object_clicked']['lat'])
+        #st.write(st_map['last_object_clicked']['lon'])
+        
+        # update_marker(st_map, [-42, 76])
+
+        st.write(st_map)
+        
+        # st_folium(st_map, center=[-42, 76])
+        # st_folium(st_map, location=[42.5,-76])
+
+        # "center":{
+        # "lat":42.500453028125584
+        # "lng":-76.03500366210939
+
+
 
     with tab2:
         # ----- info -----------------------------
@@ -508,13 +821,13 @@ def main():
         st.write(selected_np)
 
         # get detailed on selected np, lookup by name for now    
-        filt = cortland_geotaxweb_df['NAME'] == selected_np
+        filt = np_local_df['NAME'] == selected_np
 
-        # st.write(cortland_geotaxweb_df.loc[filt].T)
+        # st.write(np_local_df.loc[filt].T)
 
         # convert to dict 
         # https://stackoverflow.com/questions/50575802/convert-dataframe-row-to-dict
-        df_dict = cortland_geotaxweb_df.loc[filt].to_dict('records')[0]
+        df_dict = np_local_df.loc[filt].to_dict('records')[0]
 
 
         org, cat1, cat2 = st.columns(3)
@@ -537,9 +850,18 @@ def main():
             
             show_list = ['NAME', 'STREET', 'CITY', 'ICO',
                          'ASSET_AMT', 'INCOME_AMT', 'REVENUE_AMT',
-                         'ntee_cat']
+                         'ntee_cat', 'GROUP', 'SUBSECTION']
             for s in show_list:
-                st.write(df_dict[s])
+                #disp_title = present_lu[fld]
+                #st.write(df_dict[s])
+
+                #TODO: could use tags for datasource, present_lu[s][0]                
+                h = "Definition: " + present_lu[s]['help'] + "(data source: " + present_lu[s]['source'] + ")"
+                st.markdown(present_lu[s]['display_name'], help=h)   
+                 
+                st.write (df_dict[s])
+                #st.write (help=present_lu[s][5])
+
 
         st.divider()
         st.write ("now two columns")
@@ -570,21 +892,21 @@ def main():
                 f'<!-- table class="table table-striped table-hover table-condensed table-responsive"-->'
                 f'<table class="table table-striped table-hover table-condensed table-responsive">'
                 f'<tr> '
-                f'<td> Name:</td> <td>  {df_dict["NAME"]} </td> '
+                f'<td> Name:</td> <td>  {df_dict['NAME']} </td> '
                 f'</tr> '
                 f'<tr> '
-                f'<td> Post Addr:</td> <td> {df_dict["STREET"]}, {df_dict["CITY"]} {df_dict["ZIP"]}</td> '
+                f'<td> Post Addr:</td> <td> {df_dict['STREET']}, {df_dict['CITY']} {df_dict['ZIP']}</td> '
                 f'</tr> '
                 f'<tr> '
-                f'<td> IRS Contact:</td> <td> {df_dict["ICO"]} </td> '
+                f'<td> IRS Contact:</td> <td> {df_dict['ICO']} </td> '
                 f'</tr> '
 
                 f'<tr> '
-                f'<td> EIN:</td> <td> {df_dict["EIN"]} </td> '
+                f'<td> EIN:</td> <td> {df_dict['EIN']} </td> '
                 f'</tr> '
                 f'<tr> '
                 f'<td> Subsection </td>'
-                f'<td> 501c({df_dict["SUBSECTION"]}) </td>'
+                f'<td> 501c({df_dict['SUBSECTION']}) </td>'
                 f'</tr> ' 
                               
                 f'</table>'
@@ -606,22 +928,22 @@ def main():
         #writing a url 
         st.write(f"[{link_title}](%s)" % url)
 
-        card_container = st.container()
-
-        with card_container:
-            # Title within the card
-            st.header("Choose an option:")
-
-            st.write(" blah blah")
-        
-        with st.container():
-            st.header('Dashboard Card Title')
-            st.text('Some interesting insights')
-
+ 
     with testtab:
         st.write("test tab")
         st.subheader("Org Basics")
-        st.table(org_basics(df_dict))
+        #st.table(org_basics(df_dict, present_lu))
+        
+        # have org basics display it
+        org_basics(df_dict, present_lu)
+        
+        # general approach to printed by section from presentation lookup
+        display_section('Form 990x', df_dict, present_lu)
+
+        # general approach to printed by section from presentation lookup
+        display_section('Census', df_dict, present_lu)
+
+
 
         st.subheader("Data from IRS Tax Form (990, 990EZ)")
         st.table(irs_basics(df_dict))
@@ -629,11 +951,13 @@ def main():
         st.subheader("Census Geocoding")
         st.table(census_basics(df_dict))
 
+
         st.subheader("People listed on IRS Tax Form")
         st.table(get_people(df_dict))
 
         st.subheader("Web Search")
         st.table(get_web_srch(df_dict))
+
 
 if __name__ == "__main__":
     main()
