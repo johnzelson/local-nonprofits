@@ -1,4 +1,4 @@
-# Local Nonprofits 
+# Local Nonprofits (App in DRAFT)
 
 This app collects data about nonprofits in a local area in order to learn about community. The data is collected from multiple sources and has links to other resources that seemed interesting.  
 
