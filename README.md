@@ -1,6 +1,19 @@
-# 🎈 Blank app template
+# Local Nonprofits 
 
-A simple Streamlit app template for you to modify!
+This app collects data about nonprofits in a local area in order to learn about community. The data is collected from multiple sources and has links to other resources that seemed interesting.  
+
+Data Sources:
+- IRS Business Master File (BMF) of "active" nonprofits
+- IRS Tax Returns (Form 990-series)
+- Census
+- Congress API
+
+With external links to the amazing Censusreporter, Probublica, and...
+
+The data is processed in five google colab notebooks (link)
+
+Additional background can be found at (link)
+
 
 [![Open in Streamlit](https://static.streamlit.io/badges/streamlit_badge_black_white.svg)](https://blank-app-template.streamlit.app/)
 
