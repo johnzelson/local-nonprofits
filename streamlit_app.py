@@ -296,7 +296,7 @@ def display_interesting_links(df_dict):
     more_info['src_name'] = "Propbublica"
     # more_info['ein'] = df_dict['EIN']
     more_info['general_desc'] = "ProPublica is an independent, nonprofit newsroom that produces investigative journalism with moral force"
-    url = f"https://projects.propublica.org/nonprofits/organizations/{df_dict["EIN"]}"
+    url = f"https://projects.propublica.org/nonprofits/organizations/{df_dict['EIN']}"
     full_link = f"<a href=\"{url}\" target=\"_blank\">Propublica Nonprofit Explorer &#8594;</a>"
     more_info['link'] = full_link
     link_list.append(more_info)
