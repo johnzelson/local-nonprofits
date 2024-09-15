@@ -29,7 +29,7 @@ import streamlit.components.v1 as components
 #from streamlit_elements import dashboard
 
 
-APP_TITLE = 'Mapping Nonprofits'
+APP_TITLE = 'Local Nonprofits'
 APP_SUB_TITLE = 'Source:  IRS Tax Returns and APS for Census, Congress, Bing '
 
 
@@ -149,147 +149,6 @@ def get_map_popup(row, df) :
     f'</tr> </table>')
 
 
-# will be deleted, included for reference from previous iteration
-def get_popup (row):
-    # moving to get map popup...
-    #TODO: put logic to skip nulls, notate which website, etc
-    #TODO: use api.congress.gov to get stuff, https://www.congress.gov/help/using-data-offsite
-    # key saved in secrets
-    # https://api.congress.gov/v3/member/MI/10?api_key=[INSERT_KEY]
-    # https://api.congress.gov/v3/member/NY/19?api_key=pYKHRuu4IQNyahFhDLEeiCGJhCILctRhjY6QdYVA
-
-    
-    # -- ny state legislature links --
-    # TODO: check census to see if it can deliver link ready value
-    # assumes consistency
-    #senate link format: https://www.nysenate.gov/district/48
-    #data format:  State (Upper): 	State Senate District 48
-    legup_link_parts = row.legup_NAME.split(' ')
-
-    #https://www.nysenate.gov/district/48
-    legup_link = (f"<a href=\"https://www.nysenate.gov/district/{legup_link_parts[-1]}\" "
-                f"target=\"_blank\"> {row.legup_NAME} </a>")
-
-
-    # format for assembly:  https://www.assembly.state.ny.us/mem/?ad=125&sh=about
-    # data format:  Assembly District 125
-    leglow_link_parts = row.leglow_NAME.split(' ')
-    leglow_link = (f"<a href=\"https://www.assembly.state.ny.us/mem/?ad={leglow_link_parts[-1]}&sh=about\" "
-                f"target=\"_blank\"> {row.leglow_NAME} </a>")
-
-    # get congressional distict info
-    # district_dict[dist] loaded previously
-    #cong_dist_url = district_dict[row.cong_NAME]['house_url']
-    #cong_mbr_name = district_dict[row.cong_NAME]['name']
-    #cong_dist_link = (f' <a href=\"{cong_dist_url}\" '
-    #            f'target=\"_blank\"> {row.cong_NAME} - {cong_mbr_name}</a> ')
-    cong_dist_link = ''
-                
-    # website
-    if not pd.isnull(row.WebsiteAddressTxt):
-        if row.WebsiteAddressTxt == 'tag_not_found':
-            web_url = (f"<a href=\"{row.url}\" "
-                    f" target=\"_blank\"> {row.found_name} (web search) </a>")
-        else:
-            web_url = (f'<a href=\"https://{row.WebsiteAddressTxt}\" '
-                    f' target=\"_blank\"> {row.WebsiteAddressTxt} (IRS)</a>')
-    elif not pd.isnull(row.url):
-            web_url = (f'<a href=\"{row.url}\" '
-                    f' target=\"_blank\"> {row.found_name} (web search) </a>')
-    else:
-        web_url = 'No Website Found'
-
-    # format for guidestar 12-23456789
-    ein = str(row.EIN)
-    ein2 = ein[:2]
-    ein7 = ein[2:9]
-    return (f'<div>'
-    f'<table class="table table-striped table-hover table-condensed table-responsive">'
-    f'<tr> '
-    f'<td> Name:</td> <td>  {row.NAME} </td> '
-    f'</tr> '
-    f'<tr> '
-    f'<td> Post Addr:</td> <td> {row.STREET}, {row.CITY} </td> '
-    f'</tr> '
-    f'<tr> '
-    f'<td> IRS Contact:</td> <td> {row.ICO} </td> '
-    f'</tr> '
-
-    f'<tr> '
-    f'<td> EIN:</td> <td> {row.EIN} </td> '
-    f'</tr> '
-
-    f'<tr> '
-    f'<td colspan=2> '
-    f'<a href=https://projects.propublica.org/nonprofits/organizations/{row.EIN} '
-    f' target=\"_blank\">Propublic &#8594; </a> <br>'
-
-    f'<a href=https://www.guidestar.org/profile/{ein2}-{ein7} '
-    f' target=_\"blank\"  >Guidestar &#8594;</a> <br>'
-
-    f'<a href=https://www.causeid.com/{row.EIN}>CauseIQ </a> <br>'
-    f'<a href=https://eintaxid.com/company/{row.EIN}>EIN Tax ID</a>'
-
-    f'   </td> '
-    f'</tr> '
-
-    f'<tr> '
-    f'<td> INCOME AMT:</td> <td> {row.INCOME_AMT} </td> '
-    f'</tr> '
-    f'</tr> '
-    f'<td> NTEE:</td> <td> {row.ntee_cat} </td> '
-    f'</tr> '
-    f'<tr> '
-    f'<td> Org Type:</td> <td> 501c({row.SUBSECTION}) {row.org_lu} </td> '
-    f'</tr> '
-    f'<tr> '
-    f'<td> Activities:</td> <td> {row.act1_lu} </td> '
-    f'</tr> '
-    f'<tr> '
-    f'<td> SubName:</td> <td> {row.cntysub_NAME} </td> '
-    f'</tr> '
-
-    f'<tr> '
-    f'<td> Foundation Category:</td> <td> {row.found_lu} </td> '
-    f'</tr> '
-
-    f'<tr> '
-    f'<td> State (Upper):</td> <td>  {legup_link} &#8594; </td> '
-    f'</tr> '
-    f'<tr> '
-    f'<td> State (Lower):</td> <td> {leglow_link} &#8594; </td> '
-    f'</tr> '
-    f'<tr> '
-    f'<td> Congress Dist:</td> <td> '
-    f' {cong_dist_link} &#8594;'
-    f'</td> '
-    f'</tr> '
-
-    f'<tr> '
-    f'<td> Senate:</td> <td> '
-    f' <a href=\"https://www.senate.gov/states/NY/intro.htm\" '   
-    f' target=\"_blank\">Senators in NY</a> &#8594; '
-    f' </td> '
-    f'</tr> '
-
-    f'<tr> '
-    f'<td> Website:</td> <td> {web_url} &#8594; '
-    f'  </td> '
-    f'</tr> '
-
-    f'<tr> '
-    f'<td> Mission:</td> <td> {row.Mission} </td> '
-    f'</tr> '
-    f'<tr> '
-    f'<td> Accomplishments:</td> <td> {row.ProgramSrvcAccomplishmentGrp} </td> '
-    f'</tr> '
-    f'<tr> '
-    f'<td> Programming:</td> <td> {row.Pgm_Serv_Accomps} </td> '
-    f'</tr> '
-
-    f'</table> '
-    f'</div>')
-
 
 # ----- end get popup
 
@@ -400,33 +259,100 @@ def display_map(np_local_df, tracts_cc_gpd):
 
     return selected_np, st_map # experiment to return map...
 
-def interesting_links(df_dict):
+def display_interesting_links(df_dict):
+    """ External Links to more data about an Org 
 
-    #https://censusreporter.org/locate/?lat=42.598131&lng=-76.17985
+    Paramters: df_dict(dict): dictionary with all data for selected nonprofit
+
+    Return:  link_list (list of dicts):  external links
+    Not using return list, just displaying
+    
+    """
+    link_list = []
+
+    # Census Reporter Analysis of census tract of org
+    more_info = {}
+    more_info['src_name'] = "Census Reporter"
+    # more_info['ein'] = df_dict['EIN']
+    more_info['general_desc'] = "Censusreporter offers awesome summaries of Census Info"
+    
+
+    # https://censusreporter.org/locate/?lat=42.598131&lng=-76.17985
     # lat is coord_y
     lat = df_dict['coord_y']
     lng = df_dict['coord_x']
-    url = f"https://censusreporter.org/locate/?lat={lat}&lng={lng}"
-    full_link = f"<a href=\"{url}\" target=\"_blank\">Census Reporter &#8594;</a>"
-    return full_link
+    #url = f"https://censusreporter.org/locate/?lat={lat}&lng={lng}"
+
+    url = 'https://censusreporter.org/locate/'
+    url += f"?lat={lat}&lng={lng}"
+    full_link = f"<a href=\"{url}\" target=\"_blank\">Census Reporter Demographics &#8594;</a>"
+    more_info['link'] = full_link
+    link_list.append(more_info)
+
+    #probublica
+    #https://projects.propublica.org/nonprofits/organizations/132951986
+    # Census Reporter Analysis of census tract of org
+    more_info = {}
+    more_info['src_name'] = "Propbublica"
+    # more_info['ein'] = df_dict['EIN']
+    more_info['general_desc'] = "ProPublica is an independent, nonprofit newsroom that produces investigative journalism with moral force"
+    url = f"https://projects.propublica.org/nonprofits/organizations/{df_dict["EIN"]}"
+    full_link = f"<a href=\"{url}\" target=\"_blank\">Propublica Nonprofit Explorer &#8594;</a>"
+    more_info['link'] = full_link
+    link_list.append(more_info)
+
+    tbl_html = "<table> " # class=\"my_table\">  "
+    tbl_html += "<tr> <td colspan=3 class=\"my_cell_section\"> "
+    tbl_html += "<div class=\"tooltip\">" + "Interesting External Links"
+    tbl_html += "\t <span class=\"tooltiptext\">"
+    tbl_html +=  "Resources for Learning about Orgs and Demographics"
+    tbl_html += "\t </span>"
+    tbl_html += "</div>"
+
+    tbl_html +=  "</td> </tr>"
+
+    
+    for link in link_list:
+        tbl_html += "<tr> "
+        tbl_html += "<td>"
+        tbl_html += link['src_name']
+        tbl_html += "</td>"
+
+        tbl_html += "<td>"
+        tbl_html += link['general_desc']
+        tbl_html += "</td>"
+
+        tbl_html += "<td>"
+        tbl_html += link['link']
+        tbl_html += "</td>"
+
+        tbl_html += "</tr> "
+
+    tbl_html += "</table>"
+    st.markdown(tbl_html, unsafe_allow_html=True)
+    
+    return link_list
 
 
 def display_section(sect, which_display, df_dict, present_lu):
-    """ Flexible approach to generate tables of data elements
+    """ Generate table of data based presentation lookup 
 
-    using presentation lookups, present_lu dict
-    sect: which section, BMF, Taxes, Web
-    which display:  display_section (all), display summmary
-    df_dict: dictionary from dataframe with one NP
-     
+    Parameters:
+        present_lu (dict): presentation lookup.    Read from presentation_lookups.csv
+        which_display (str):  which fields get included
+        sect (str): which section of using presentation lookups, present_lu dict
+        df_dict (dict): dictionary from dataframe with one NP
+
+    Returns: None.  (writes html)
+
     """
     
-    #TODO: Investigate whether these tables can be generated with streamlit tools
-
+    #TODO: Investigate whether Using HTML with st.markdown can be avoided by using streamlit functions
 
     sect_dict = {} # dict of list keys/fields in section
 
-    # load a dict, key of section,with list of data elements to include 
+    # load a dict, key of section, with list of data elements to include 
+    #TODO: change var name s to something more description (eg. field_name)
     for s in  present_lu:
         sect_name = present_lu[s][which_display]
   
@@ -438,13 +364,19 @@ def display_section(sect, which_display, df_dict, present_lu):
     show_list = sect_dict[sect]
 
     s = ''
-    tbl_html = "<hr> <table> " # class=\"my_table\">  "
-    tbl_html += "<tr> "
+    tbl_html = "<table> " # class=\"my_table\">  "
+    # tbl_html += "<tr> "
     tbl_html += "<tr> <td colspan=2 class=\"my_cell_section\"> "
-    tbl_html +=  sect + "</td> </tr>"
+    tbl_html += "<div class=\"tooltip\">" + sect
+    tbl_html += "\t <span class=\"tooltiptext\">"
+    tbl_html +=  present_lu[sect]['help']  
+    tbl_html += "\t </span>"
+    tbl_html += "</div>"
 
-    tbl_html += "<tr> "
+    tbl_html +=  "</td> </tr>"
+
     for s in show_list:
+        tbl_html += "<tr> "
         
         # tooltip info
         h = "Definition: " + present_lu[s]['help'] + "(data source: " + present_lu[s]['source'] + ")<br>"
@@ -483,7 +415,7 @@ def display_section(sect, which_display, df_dict, present_lu):
                     val_string = '${:,.0f}'.format(val)
                     tbl_html += val_string
                 elif present_lu[s]['format'] == 'url':
-                    # in streamlit,target=_blank works when printed with st.markdown, but not with st.html
+                    # ?: in streamlit,target=_blank with st.markdown, but not with st.html
                     #tbl_html += f"<a href=\"https://{df_dict[s]}\"   rel=\"noopener noreferrer \"> "
                     tbl_html += f"<a href=\"https://{df_dict[s]}\"   target=\"_blank\"> "
                     tbl_html += f"{df_dict[s]} &#8594;</a> "
@@ -545,16 +477,48 @@ def display_arbitrary_list (df_dict, present_lu, show_list):
         tbl_html += "</td>"
         tbl_html += "<td>"
 
-        if present_lu[s]['format'] == 'currency':    
-            val_string = '${:,.0f}'.format(df_dict[s])
-            tbl_html += val_string
-        elif present_lu[s]['format'] == 'link':
-            tbl_html += f"<a href=\"https://{df_dict[s]}\" rel=\"noopener noreferrer dofollow\" target=\"_blank\"> "
-            tbl_html += f"{df_dict[s]}</a> "
-            
+ 
+        #TODO: make a def?   copied from display section
+        if (s in df_dict 
+            and df_dict[s] not in ["tag_not_found", "Tag not in file", "nan", "Nan"]
+            and not pd.isnull(df_dict[s])
+            ):  
+
+            try:
+
+                if present_lu[s]['format'] == 'int':   
+                    tbl_html += str(int(df_dict[s])) 
+
+                elif present_lu[s]['format'] == 'currency':    
+                    val = float(df_dict[s])    
+                    val_string = '${:,.0f}'.format(val)
+                    tbl_html += val_string
+                elif present_lu[s]['format'] == 'url':
+                    # in streamlit,target=_blank works when printed with st.markdown, but not with st.html
+                    #tbl_html += f"<a href=\"https://{df_dict[s]}\"   rel=\"noopener noreferrer \"> "
+                    tbl_html += f"<a href=\"https://{df_dict[s]}\"   target=\"_blank\"> "
+                    tbl_html += f"{df_dict[s]} &#8594;</a> "
+                elif present_lu[s]['format'] == 'link':
+                    tbl_html += df_dict[s]
+
+                elif present_lu[s]['format'] == "cap":   # narratives in sentence case, instead of all caps
+                    tbl_html += str(df_dict[s]).capitalize()
+                
+                else:
+                    tbl_html +=   str(df_dict[s])
+
+            except:
+                tbl_html += "ERROR: "
+                tbl_html +=  "df_dict s: (" + str(df_dict[s]) + ") <br>"
+                tbl_html +=  "present_lu s: " + str(present_lu[s]) + "<br>"
+                tbl_html +=  "s: " + s
         else:
-            tbl_html +=  str(df_dict[s])
-        
+            if not s in df_dict:
+                tbl_html += "This tag in presentation, but not in df"
+            else:
+                tbl_html += "(tnf)"
+        # ---  end copy      
+
         tbl_html += "</td> </tr>"
     #org_dict = df_dict.fromkeys(show_list, 0)
     # st.write(org_dict)
@@ -631,18 +595,6 @@ def load_present_lu():
             del present_lu[fld_dict]['sample']
 
     return present_lu
-
-#TODO: move into processing?
-def load_congress():
-    # verify, read the json into dict
-    import json
-    cong_dist = open('data/congress.json') 
-
-    # returns JSON object as  
-    # a dictionary 
-    cong_dict = json.load(cong_dist)
-    return cong_dict
-
 
 
 def main():
@@ -742,8 +694,6 @@ def main():
     tracts_gpd = gpd.read_file('data/tl_2022_36_tract.shp')
     tracts_cc_gpd = tracts_gpd[tracts_gpd['COUNTYFP'] == '023']
 
-    cong_dist = load_congress()
-
     # Initialize session data
     
     #TODO: check-why put in session state? just put in sidebar?
@@ -763,7 +713,7 @@ def main():
 
 
     # main content area
-    map_tab, sum_tab, test_tab, graph_tests = st.tabs(["Map", "Data", "Test Tabs", "Graph Tests"])
+    map_tab, sum_tab, all_tab, graph_tests = st.tabs(["Map", "Organization Info", "All Data Elements", "Graph Tests"])
 
 
     with map_tab:
@@ -794,81 +744,257 @@ def main():
     with sum_tab:
         # ----- info -----------------------------
         #st.write("Summary Tab")
-        st.header(selected_np)
-
-        # get detailed on selected np, lookup by name for now    
+        st.subheader(selected_np)
+        
+        # get detailed on selected np, lookup by name for now  
+        #TODO: use something else for ID.  EIN? Name + EIN?  
         filt = np_local_df['NAME'] == selected_np
 
-        # convert to dict 
+        # convert the selected nonprofit to dict 
         # https://stackoverflow.com/questions/50575802/convert-dataframe-row-to-dict
         df_dict = np_local_df.loc[filt].to_dict('records')[0]
 
+        #TODO: Add iteration  
+        # sects_to_show = ['IRS Business Master File', 'Form 990x', 'Staff and Board']
 
-        display_section('IRS Business Master File', 'disp_section_summary', df_dict, present_lu)
+        # link to all sedtions for reference
+        #st.markdown('''
+        #            [BMF](#section-1-bmf) | 
+        #            [IRS Form 990-series](#section-2-990x) | 
+        #            [Stf](#section-3-staff-and-board)  |
+        #            [Census](#section-4-census) |
+        # interesting
+        #            [Web](#section-5-web)    
+        #            ''')
 
-        display_section('Form 990x', 'display_section', df_dict, present_lu)
+        # could use same toc just dump it, but prefer to not link current section
+        #toc_md = '[IRS Form 990-series](#section-2-990x) | [Stf](#section-3-staff-and-board)'
+        #st.markdown(toc_md)
+        
+        # sect 1 BMF
+        st.markdown('##### Section 1: Business Master File (BMF)')
+        st.markdown('''
+                     BMF  | 
+                    [IRS Form 990-series](#section-2-990x) | 
+                    [Staff/Board](#section-3-staff-and-board)  |
+                    [Census](#section-4-census) |
+                    [Links](#section-5-interesting-links) |
+                    [Web](#section-6-web)    
+                    ''')
+        display_section('IRS Business Master File', 'display_section_summary', df_dict, present_lu)
+        st.divider()
 
-        st.write ("Staff and Board")
+
+        # sect 2 Form 990 series
+        st.markdown('##### Section 2: 990x')  # section name
+        st.markdown('''
+                    [BMF](#section-1-business-master-file-bmf) | 
+                    [IRS Form 990-series](#section-2-990x) | 
+                    [Staff/Board](#section-3-staff-and-board)  |
+                    [Census](#section-4-census) | 
+                    [Links](#section-5-interesting-links) |
+                    [Web](#section-6-web) 
+                    ''')
+
+        #check if form 990x for np is in data, df_dict
+        if isinstance(df_dict['filename'], str):
+            display_section('Form 990x', 'display_section_summary', df_dict, present_lu)
+        else:
+            st.html("&nbsp &nbsp No Tax Return for this Organization from from submissions in 2023 thru July 2024")
+            st.html("&nbsp &nbsp Check the Propublica External Link Below")
+        # sect 3 staff and board
+        st.markdown('##### Section 3: Staff and Board')  # section name
+        st.markdown('''
+                    [BMF](#section-1-business-master-file-bmf) | 
+                    [IRS Form 990-series](#section-2-990x) | 
+                    [Staff/Board](#section-3-staff-and-board)  |
+                    [Census](#section-4-census) |
+                    [Links](#section-5-interesting-links) | 
+                    [Web](#section-6-web) 
+                    ''')
         st.table(get_people(df_dict))
 
+        st.divider()  
+        # sect 4 census
+        st.markdown('##### Section 4: Census')          # section name
+        st.markdown('''
+                    [BMF](#section-1-business-master-file-bmf) | 
+                    [IRS Form 990-series](#section-2-990x) | 
+                    [Staff/Board](#section-3-staff-and-board)  |
+                    [Census](#section-4-census) |
+                    [Links](#section-5-interesting-links) | 
+                    [Web](#section-6-web) 
+                    ''')
+        display_section('Census', 'display_section_summary', df_dict, present_lu)
 
-        #display_section('Census', 'display_section', df_dict, present_lu)
-        display_section('Census', 'disp_section_summary', df_dict, present_lu)
-        st.markdown (interesting_links(df_dict), unsafe_allow_html=True)
+        st.divider()  
 
+        st.markdown('##### Section 5: Interesting Links')  # section name
+        st.markdown('''
+                    [BMF](#section-1-business-master-file-bmf) | 
+                    [IRS Form 990-series](#section-2-990x) | 
+                    [Staff/Board](#section-3-staff-and-board)  |
+                    [Census](#section-4-census) |
+                    [Links](#section-5-interesting-links) | 
+                    [Web](#section-6-web) 
+                    ''')        
+        display_interesting_links(df_dict)
 
-        display_section('Web', 'disp_section_summary', df_dict, present_lu)
+        st.divider()  
+                
+        # sect 5 web
+        st.markdown('##### Section 6: Web')          # section name
+        st.markdown('''
+                    [BMF](#section-1-business-master-file-bmf) | 
+                    [IRS Form 990-series](#section-2-990x) | 
+                    [Staff/Board](#section-3-staff-and-board)  |
+                    [Census](#section-4-census) |
+                    [Links](#section-5-interesting-links) | 
+                    [Web](#section-6-web) 
+                    ''')
+        display_section('Web', 'display_section_summary', df_dict, present_lu)
 
-
-        st.divider()
-        st.write ("--- tests ---")
-
-            
-        st.write(df_dict['NAME'] )
-
-        url = "https://www.streamlit.io"
-        link_title = df_dict['NAME']
-
-        #writing a url 
-        st.write(f"[{link_title}](%s)" % url)
 
  
-    with test_tab:
-        st.write("test tab")
-        st.subheader("Org Basics")
+    with all_tab:
+
+        st.subheader(selected_np)
+        st.write("(all data elements)")
         #st.table(org_basics(df_dict, present_lu))
 
-        display_section('IRS Business Master File', 'disp_section_summary', df_dict, present_lu)
+        display_section('IRS Business Master File', 'display_section_all', df_dict, present_lu)
  
         #TODO: add check if tax info is in data. if not, print note and skip 
         
         if isinstance(df_dict['filename'], str):
-            display_section('Form 990x', 'display_section', df_dict, present_lu)
+            display_section('Form 990x', 'display_section_all', df_dict, present_lu)
             st.subheader("People listed on IRS Tax Form")
             st.table(get_people(df_dict))
         else:
             st.write("(No Tax Return for this EIN, from submissions in 2023 thru July 2024")
         
-        display_section('Census', 'display_section', df_dict, present_lu)
+        display_section('Census', 'display_section_all', df_dict, present_lu)
 
         st.subheader("Web Search")
-        display_section('Web', 'disp_section_summary', df_dict, present_lu)
+        display_section('Web', 'display_section_all', df_dict, present_lu)
 
     with graph_tests:
+        st.subheader(selected_np)
+        st.write("(Info about the geographic area)")
+        show_list = ['coord_x', 'coord_y', 'cb_NAME', 'centracts_NAME', 'cb_GEOID']
+        display_arbitrary_list(df_dict, present_lu, show_list)
+
+        # build census tract geo id
+        # https://www.census.gov/programs-surveys/geography/technical-documentation/naming-convention/cartographic-boundary-file/carto-boundary-summary-level.html
+        # 140	State-County-Census Tract
+
+        # https://censusreporter.org/topics/geography/
+        # NNN 	Summary level (three digits)
+        # 00 	Geographic component (always 00)*
+        # US 	Separator (always US)
+
+        cen_tract_summary = '14000US'
+        st_fips = '36'  
+        #TODO:get from df, but have to check int to str on county (023 vs 23)
+        #TODO: review all loads from csv and checks to make sure geoid/cds are str
+        cnty_fips = '023'
+        tract_cd = str(int(df_dict['centracts_TRACT'])).strip()
+        tract_geoid = cen_tract_summary + st_fips + cnty_fips + tract_cd
+        tract_geoid = tract_geoid.strip()
 
 
+        dc_hl = f"""
+        <script src=\"https://datacommons.org/datacommons.js\"></script>
+        <datacommons-highlight
+            header="Census Track {tract_cd} Population"
+            place=\"geoId/36023{tract_cd}\"
+            variable=\"Count_Person\"
+        ></datacommons-highlight> """
+        components.html(dc_hl, height=200)
+
+
+        # works
         dc_graph = """ 
             <script src=\"https://datacommons.org/datacommons.js\"></script>
             <datacommons-line
-                header=\"US Population Over Time\"
-                place=\"country/USA\"
+                header=\"Cortland County Population Over Time\"
+                place=\"geoId/36023\"
                 variables=\"Count_Person\"
-            ></datacommons-line>  """
+            ></datacommons-line>  """        
+        components.html(dc_graph, height=400)
 
+        import math
+        tract_list = []
+        all_tracts = " "
+
+        tracts_list = np_local_df['cb_TRACT'].unique()
+        # st.write (tracts_list)
         
-        components.html(dc_graph)
+        #TODO:Again: all census needs to be string in all csv loads during processing
+        # for now, fix it here
+        # create space seperated list of geoids that data commons wants
+        for tract in tracts_list:
+            if not math.isnan(tract):
+                tract_str = str(int(tract))
+                all_tracts += "geoId/36023" + tract_str + " "
+        
+        dc_graph = f""" 
+            <script src=\"https://datacommons.org/datacommons.js\"></script>
+            <datacommons-bar
+                header=\"Census Tract Population\"
+                places=\"{all_tracts} \"
+                variables=\"Count_Person\"
+            ></datacommons-bar>  """        
+        components.html(dc_graph, height=400)
 
 
+        dc_graph = f""" 
+            <script src=\"https://datacommons.org/datacommons.js\"></script>
+            <datacommons-bar
+                header=\"Median Income by Census Tract\"
+                places=\"{all_tracts} \"
+                variables=\"Median_Income_Household Median_Income_Person\"
+            ></datacommons-bar>  """        
+        components.html(dc_graph, height=400)
+
+        # 1400000US01015001000
+        # 14000US36023971200
+
+        # https://censusreporter.org/profiles/14000US36023971200
+        cr_link = "https://censusreporter.org/profiles/" + tract_geoid
+        link_title = "Censusreporter Tract Reports"
+    
+        #writing a url 
+        st.write(f"[{link_title}](%s)" % cr_link)
+
+
+
+        # components.html(censusreport_frame, height=250)
+
+        # make it easier to construct
+        st.write ("Cenus Tract GEOID: " + tract_geoid)
+
+        cr_f1 = "<iframe id=\"cr-embed-14000US36023970900-demographics-race\" "
+        cr_f1 += "class=\"census-reporter-embed\" "
+        cr_f1 += "src=\"https://s3.amazonaws.com/embed.censusreporter.org/1.0/iframe.html"
+        #cr_f1 += "?geoID=14000US36023970900"
+        cr_f1 += "?geoID=" + tract_geoid
+        cr_f1 += "&chartDataID=demographics-race"
+        cr_f1 += "&dataYear=2022"
+        cr_f1 += "&releaseID=ACS_2022_5-year"
+        cr_f1 += "&chartType=column"
+        cr_f1 += "&chartHeight=200"
+        cr_f1 += "&chartQualifier=Hispanic+includes+respondents+of+any+race.+Other+categories+are+non-Hispanic."
+        cr_f1 += "&chartTitle=&initialSort="
+        cr_f1 += "&statType=scaled-percentage\"" 
+        cr_f1 += "    frameborder=\"0\" width=\"100%\" height=\"300\"" 
+        cr_f1 += "    style=\"margin: 1em; max-width: 720px;\"></iframe>"
+            
+        cr_f1 += "<script src=\"https://s3.amazonaws.com/embed.censusreporter.org/1.0/js/embed.chart.make.js\">"
+        cr_f1 += "</script>"
+
+        # works, but comment for testing other things
+        components.html(cr_f1, height=250)
 
 
 if __name__ == "__main__":
