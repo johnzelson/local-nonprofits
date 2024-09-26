@@ -12,10 +12,9 @@ With external links to the amazing Censusreporter, Probublica, and...
 
 The data is processed in five google colab notebooks (link)
 
+[![Open Local Nonrofits in Streamlit](https://local-nonprofits-jzelson.streamlit.app/)
+
 Additional background can be found at (link)
-
-
-[![Open in Streamlit](https://static.streamlit.io/badges/streamlit_badge_black_white.svg)](https://blank-app-template.streamlit.app/)
 
 ### How to run it on your own machine
 
