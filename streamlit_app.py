@@ -275,7 +275,13 @@ def display_map(np_local_df, tracts_cc_gpd, np_df_selected_index):
     np_org_name = np_list[np_list_index]
     st.write (np_display_nbr + np_org_name)
 
-
+    # catch when there is no geocode/address
+    # TODO: review when df_dict gets created.  inefficient to recreate df_dict here, again
+    df_dict = np_local_df.filter(items=[int(np_df_selected_index)], axis=0).to_dict('records')[0]
+    if pd.isnull(df_dict['coord_x']):
+        st.write ("This NP address could not be geocoded, no map redraw")
+        return '', np_df_selected_index, redraw
+    
     colocated_markers = {}
 
     my_log("Disp Map: define m2  ")
@@ -289,7 +295,7 @@ def display_map(np_local_df, tracts_cc_gpd, np_df_selected_index):
     
     nps2 = folium.FeatureGroup(name="NPs")
     # addme = folium.FeatureGroup(name="addme")
-    colocated = folium.FeatureGroup(name="Colocated")
+    colocated = folium.FeatureGroup(name="Colocated NPs")
 
     orgs_no_address = []
 
@@ -302,6 +308,8 @@ def display_map(np_local_df, tracts_cc_gpd, np_df_selected_index):
         # if user selected a cluster, save cluster lat lng
         # to match cluster marker creation  
         
+        #TODO: if selected NP does have geocoding...
+
         num = index
         present_num = "(" + str(num) + ") "
         if num == np_df_selected_index:
@@ -309,7 +317,6 @@ def display_map(np_local_df, tracts_cc_gpd, np_df_selected_index):
             center = [  row['coord_y'], row['coord_x'] ]
             if row['cluster_ind'] > 0:
                 center = [  row['cluster_lat'], row['cluster_lng'] ]
-
         else:
             color=""
 
@@ -334,11 +341,9 @@ def display_map(np_local_df, tracts_cc_gpd, np_df_selected_index):
                 # save aside info about co-located or close orgs
                 ngroup = str(int(row.cluster_ngroup))
                 if ngroup not in colocated_markers:
-                    colocated_markers[ngroup] = [] 
+                    colocated_markers[ngroup] = [] # first time, initialize
 
-                #TODO: investigate this data structure 
-                colocated_markers[ngroup].append(row) 
-                
+                colocated_markers[ngroup].append(row)                 
         else:
             orgs_no_address.append([index, row.NAME, row.STREET])
 
@@ -382,8 +387,8 @@ def display_map(np_local_df, tracts_cc_gpd, np_df_selected_index):
    
     # call to render Folium map in Streamlit
     st_m2 = st_folium(m2, 
-                      width=725, 
-                      height=425,
+                      width=675, 
+                      height=450,
                       center=center,
                     key="my_np_map",
                     zoom=12    
@@ -1000,6 +1005,7 @@ def main():
         
         my_log("Main: Map Tab, go do Map with index: " + str(np_df_selected_index))
 
+
         # Render Map of NP Markers. 
         (st_m2, np_df_selected_index, redraw ) = display_map(np_local_df, tracts_cc_gpd, np_df_selected_index)
         my_log("Main: Map Tab, returned from Map, index: " + str(np_df_selected_index))
@@ -1159,120 +1165,121 @@ def main():
         st.markdown(tab_summary_md)
 
         st.write ("Links to external sources created using these data elements")
-        show_list = ['NAME', 'coord_x', 'coord_y', 'cb_NAME', 'centracts_NAME', 'cb_GEOID']
+        show_list = ['NAME', 'STREET', 'coord_x', 'coord_y', 'cb_NAME', 'centracts_NAME', 'cb_GEOID']
         display_arbitrary_list(df_dict, present_lu, show_list)
 
-        # build census tract geo id
-        # https://www.census.gov/programs-surveys/geography/technical-documentation/naming-convention/cartographic-boundary-file/carto-boundary-summary-level.html
-        # 140	State-County-Census Tract
+        # if no usable address exists
+        if pd.isnull(df_dict['coord_x']):
+            st.write ("This NP address could not be geocoded ")
+        else:  
 
-        # https://censusreporter.org/topics/geography/
-        # NNN 	Summary level (three digits)
-        # 00 	Geographic component (always 00)*
-        # US 	Separator (always US)
+            # build census tract geo id
+            # https://www.census.gov/programs-surveys/geography/technical-documentation/naming-convention/cartographic-boundary-file/carto-boundary-summary-level.html
+            # 140	State-County-Census Tract
 
-        cen_tract_summary = '14000US'
-        st_fips = '36'  
-        #TODO:get from df, but have to check int to str on county (023 vs 23)
-        #TODO: review all loads from csv and checks to make sure geoid/cds are str
-        cnty_fips = '023'
-        tract_cd = str(int(df_dict['centracts_TRACT'])).strip()
-        tract_geoid = cen_tract_summary + st_fips + cnty_fips + tract_cd
-        tract_geoid = tract_geoid.strip()
+            # https://censusreporter.org/topics/geography/
+            # NNN 	Summary level (three digits)
+            # 00 	Geographic component (always 00)*
+            # US 	Separator (always US)
 
-
-        dc_hl = f"""
-        <script src=\"https://datacommons.org/datacommons.js\"></script>
-        <datacommons-highlight
-            header="Census Track {tract_cd} Population"
-            place=\"geoId/36023{tract_cd}\"
-            variable=\"Count_Person\"
-        ></datacommons-highlight> """
-        components.html(dc_hl, height=200)
+            cen_tract_summary = '14000US'
+            st_fips = '36'  
+            #TODO:get from df, but have to check int to str on county (023 vs 23)
+            #TODO: review all loads from csv and checks to make sure geoid/cds are str
+            cnty_fips = '023'
+            tract_cd = str(int(df_dict['centracts_TRACT'])).strip()
+            tract_geoid = cen_tract_summary + st_fips + cnty_fips + tract_cd
+            tract_geoid = tract_geoid.strip()
 
 
-        # works
-        dc_graph = """ 
+            dc_hl = f"""
             <script src=\"https://datacommons.org/datacommons.js\"></script>
-            <datacommons-line
-                header=\"Cortland County Population Over Time\"
-                place=\"geoId/36023\"
-                variables=\"Count_Person\"
-            ></datacommons-line>  """        
-        components.html(dc_graph, height=400)
-
-        import math
-        tract_list = []
-        all_tracts = " "
-
-        tracts_list = np_local_df['cb_TRACT'].unique()
-        # st.write (tracts_list)
-        
-        #TODO:Again: all census needs to be string in all csv loads during processing
-        # for now, fix it here
-        # create space seperated list of geoids that data commons wants
-        for tract in tracts_list:
-            if not math.isnan(tract):
-                tract_str = str(int(tract))
-                all_tracts += "geoId/36023" + tract_str + " "
-        
-        dc_graph = f""" 
-            <script src=\"https://datacommons.org/datacommons.js\"></script>
-            <datacommons-bar
-                header=\"Census Tract Population\"
-                places=\"{all_tracts} \"
-                variables=\"Count_Person\"
-            ></datacommons-bar>  """        
-        components.html(dc_graph, height=400)
+            <datacommons-highlight
+                header="Census Track {tract_cd} Population"
+                place=\"geoId/36023{tract_cd}\"
+                variable=\"Count_Person\"
+            ></datacommons-highlight> """
+            components.html(dc_hl, height=200)
 
 
-        dc_graph = f""" 
-            <script src=\"https://datacommons.org/datacommons.js\"></script>
-            <datacommons-bar
-                header=\"Median Income by Census Tract\"
-                places=\"{all_tracts} \"
-                variables=\"Median_Income_Household Median_Income_Person\"
-            ></datacommons-bar>  """        
-        components.html(dc_graph, height=400)
+            # works
+            dc_graph = """ 
+                <script src=\"https://datacommons.org/datacommons.js\"></script>
+                <datacommons-line
+                    header=\"Cortland County Population Over Time\"
+                    place=\"geoId/36023\"
+                    variables=\"Count_Person\"
+                ></datacommons-line>  """        
+            components.html(dc_graph, height=400)
 
-        # 1400000US01015001000
-        # 14000US36023971200
+            import math
+            tract_list = []
+            all_tracts = " "
 
-        # https://censusreporter.org/profiles/14000US36023971200
-        cr_link = "https://censusreporter.org/profiles/" + tract_geoid
-        link_title = "Censusreporter Tract Reports"
-    
-        #writing a url 
-        st.write(f"[{link_title}](%s)" % cr_link)
-
-
-
-        # components.html(censusreport_frame, height=250)
-
-        # make it easier to construct
-        st.write ("Cenus Tract GEOID: " + tract_geoid)
-
-        cr_f1 = "<iframe id=\"cr-embed-14000US36023970900-demographics-race\" "
-        cr_f1 += "class=\"census-reporter-embed\" "
-        cr_f1 += "src=\"https://s3.amazonaws.com/embed.censusreporter.org/1.0/iframe.html"
-        #cr_f1 += "?geoID=14000US36023970900"
-        cr_f1 += "?geoID=" + tract_geoid
-        cr_f1 += "&chartDataID=demographics-race"
-        cr_f1 += "&dataYear=2022"
-        cr_f1 += "&releaseID=ACS_2022_5-year"
-        cr_f1 += "&chartType=column"
-        cr_f1 += "&chartHeight=200"
-        cr_f1 += "&chartQualifier=Hispanic+includes+respondents+of+any+race.+Other+categories+are+non-Hispanic."
-        cr_f1 += "&chartTitle=&initialSort="
-        cr_f1 += "&statType=scaled-percentage\"" 
-        cr_f1 += "    frameborder=\"0\" width=\"100%\" height=\"300\"" 
-        cr_f1 += "    style=\"margin: 1em; max-width: 720px;\"></iframe>"
+            tracts_list = np_local_df['cb_TRACT'].unique()
+            # st.write (tracts_list)
             
-        cr_f1 += "<script src=\"https://s3.amazonaws.com/embed.censusreporter.org/1.0/js/embed.chart.make.js\">"
-        cr_f1 += "</script>"
+            #TODO:Again: all census needs to be string in all csv loads during processing
+            # for now, fix it here
+            # create space seperated list of geoids that data commons wants
+            for tract in tracts_list:
+                if not math.isnan(tract):
+                    tract_str = str(int(tract))
+                    all_tracts += "geoId/36023" + tract_str + " "
+            
+            dc_graph = f""" 
+                <script src=\"https://datacommons.org/datacommons.js\"></script>
+                <datacommons-bar
+                    header=\"Census Tract Population\"
+                    places=\"{all_tracts} \"
+                    variables=\"Count_Person\"
+                ></datacommons-bar>  """        
+            components.html(dc_graph, height=400)
 
-        # works, but comment for testing other things
-        components.html(cr_f1, height=250)
+
+            dc_graph = f""" 
+                <script src=\"https://datacommons.org/datacommons.js\"></script>
+                <datacommons-bar
+                    header=\"Median Income by Census Tract\"
+                    places=\"{all_tracts} \"
+                    variables=\"Median_Income_Household Median_Income_Person\"
+                ></datacommons-bar>  """        
+            components.html(dc_graph, height=400)
+
+            # 1400000US01015001000
+            # 14000US36023971200
+
+            # https://censusreporter.org/profiles/14000US36023971200
+            cr_link = "https://censusreporter.org/profiles/" + tract_geoid
+            link_title = "Censusreporter Tract Reports"
+        
+
+            # components.html(censusreport_frame, height=250)
+
+            # make it easier to construct
+            st.write ("Cenus Tract GEOID: " + tract_geoid)
+
+            cr_f1 = "<iframe id=\"cr-embed-14000US36023970900-demographics-race\" "
+            cr_f1 += "class=\"census-reporter-embed\" "
+            cr_f1 += "src=\"https://s3.amazonaws.com/embed.censusreporter.org/1.0/iframe.html"
+            #cr_f1 += "?geoID=14000US36023970900"
+            cr_f1 += "?geoID=" + tract_geoid
+            cr_f1 += "&chartDataID=demographics-race"
+            cr_f1 += "&dataYear=2022"
+            cr_f1 += "&releaseID=ACS_2022_5-year"
+            cr_f1 += "&chartType=column"
+            cr_f1 += "&chartHeight=200"
+            cr_f1 += "&chartQualifier=Hispanic+includes+respondents+of+any+race.+Other+categories+are+non-Hispanic."
+            cr_f1 += "&chartTitle=&initialSort="
+            cr_f1 += "&statType=scaled-percentage\"" 
+            cr_f1 += "    frameborder=\"0\" width=\"100%\" height=\"300\"" 
+            cr_f1 += "    style=\"margin: 1em; max-width: 720px;\"></iframe>"
+                
+            cr_f1 += "<script src=\"https://s3.amazonaws.com/embed.censusreporter.org/1.0/js/embed.chart.make.js\">"
+            cr_f1 += "</script>"
+
+            # works, but comment for testing other things
+            components.html(cr_f1, height=250)
 
     # -------------  end of tabs of main content area --------------
 
