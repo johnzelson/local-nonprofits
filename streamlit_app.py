@@ -19,7 +19,6 @@ import geopandas as gpd
 import math
 from folium.features import DivIcon  #TODO: move import
 
-
 import csv
 import re
 import math
@@ -48,7 +47,6 @@ def radio_change():
 
     np_radio_change = str(st.session_state['np_radio'])
     
-    # st.sidebar.write (st.session_state['np_radio'])
     st.session_state['np_df_selected_index'] = np_radio_change
     my_log("User Change saved to session, index: " + np_radio_change)
 
@@ -108,10 +106,7 @@ def do_sidebar (np_local_df, np_df_selected_index):
                                     format_func=lambda x: "(" + str(x) + ") " + np_dict[x],
                                     index=np_radio_index, on_change=radio_change,
                                     key='np_radio')
-
             
-            # , help="help"
-
             if not np_df_selected_index:
                 np_df_selected_index = 1
 
@@ -125,9 +120,45 @@ def do_sidebar (np_local_df, np_df_selected_index):
 
         with help_tab:
             my_log("Sidebar: Help tab, entered")
-            st.write ('help')
 
-            st.write("Where is data from how to use, etc")
+            help_summary_md = """
+            #### About 
+            This is a drafty learny fun project to learn about local community, especially
+            the nonprofit sector.    
+             
+            #### How to Use
+            Select a nonprofit in sidebar or on map, then use tabs in body to
+            to see detailed info or launch explorations of other data sources.
+
+            #### Data Sources 
+            Data from multiple sources was processed using Google Colab.  
+            - IRS BUsiness Master File
+            - IRS tax returns (Form 990-series)
+            - Bing web search robot (free tier)
+            - US Census (api)
+            - US Congress (api)
+
+            #### External Links
+            Holy cow, there's lots of info available.
+            With basic geographic info ("geocoding"), charts from other information sources
+            are embedded and link
+            
+            #### Github
+            All code and google colab notebooks are available on [Gitub](https://github.com/johnzelson/local-nonprofits.git)
+
+            My original goal was just for personal learning, but it's hard to not see diverse
+            possibilities from layering data sources into an easily-havigatable interface.  If some 
+            other human comes across this:  please improve the draft :)
+
+            One could use such a tool for grant-writing, finding collaborators, identifying
+            local needs, finding places to volunteer, or just satisfying curiosity.
+
+            #### Similar Projects
+            - Giving Tuesday
+            - IRSx
+
+            """
+            st.markdown(help_summary_md)
 
             st.write(f"Number of Nonprofits: {st.session_state.num_rows}")
             st.write(f"Data Elements for each Nonprofit: {st.session_state.num_facts}")
@@ -197,19 +228,35 @@ def number_DivIcon(color,number):
 
 #test of using @st.fragment
 def display_map(np_local_df, tracts_cc_gpd, np_df_selected_index):
-    """ redoing map 
+    """ Map with Nonprofit Markers
     
-    adding numbers for markers
-    dealing with close and co-located orgs
-
+    Parameters:
+        np_local_df (dataframe):  Nonprofits in dataset
+        tracts_cc_gpd (geopandas dataframe):  cortland co., NY tract shapefiles from census
+        np_df_selected_index (int):  index of currently selected NP
+    
     Returns:
-        st_m2, np_df_selected_index
+        st_m2 (map dictionary):  streamlit map output
+        np_df_selected_index (int): index of NP if user selects from map
+        redraw (bool): indicates user has clicked on marker, so map needs to be udpated
+
     """
     my_log("Disp Map: entered")
     
-    redraw = False
 
-    # is there a selected nonprofit?  Main will always pass
+    redraw = False  
+    # Note: setting redraw is one approach for flagging scenario where
+    #       map is rendered, user clicks on a nonprofit, and map needs to be updated.
+    #       It feels clunky.  
+    #       
+    #       [add link to streamlit example of dynamic map updates]
+    #       Needs work getting smooth/dynamic map updates and updating sidebar/tabs
+    
+    #TODO: Review logic of passed vs session np_df_selected_index
+    #TODO: then, remove debugging/logging 
+
+    # Main should always pass np_df_selected_index, but 
+    # checking 
         
     # check session state 
     if 'np_df_selected_index' in st.session_state:
@@ -220,6 +267,7 @@ def display_map(np_local_df, tracts_cc_gpd, np_df_selected_index):
         np_df_selected_index = st.session_state['np_df_selected_index']
         my_log("Disp Map new: np sel in session " + str(np_df_selected_index))
 
+    # np_list is a quick list of alpha sorted nonprofits
     if 'np_list' in st.session_state:
         np_list = st.session_state['np_list']
 
@@ -228,6 +276,7 @@ def display_map(np_local_df, tracts_cc_gpd, np_df_selected_index):
     np_list_index = int(np_df_selected_index) - 1
     np_org_name = np_list[np_list_index]
     st.write (np_display_nbr + np_org_name)
+
 
     colocated_markers = {}
 
@@ -241,7 +290,7 @@ def display_map(np_local_df, tracts_cc_gpd, np_df_selected_index):
     )
     
     nps2 = folium.FeatureGroup(name="NPs")
-    addme = folium.FeatureGroup(name="addme")
+    # addme = folium.FeatureGroup(name="addme")
     colocated = folium.FeatureGroup(name="Colocated")
 
     orgs_no_address = []
@@ -317,7 +366,7 @@ def display_map(np_local_df, tracts_cc_gpd, np_df_selected_index):
         # """
 
     m2.add_child(nps2)
-    m2.add_child(addme)
+    #m2.add_child(addme)
     m2.add_child(colocated)
 
     folium.LayerControl(collapsed=False).add_to(m2)
@@ -361,47 +410,33 @@ def display_map(np_local_df, tracts_cc_gpd, np_df_selected_index):
             my_log("saving new np_df... ")
             np_df_selected_index = map_selected_index
             st.session_state['np_df_selected_index'] = np_df_selected_index
-            #st_m2 = st_folium(m2, zoom=9, width=725)
 
-            #st_m2 = st_folium(m2,
-            #    center=[42.55856083073203, -76.2084771200659],
-            #    zoom=8
-            #)
+            # leaving stubs of experiments for map redraw for future fiddling  
+            # my_log('rerun fragment')
+            # st.rerun(scope="fragment")
+            # st.rerun(scope="app")
 
-            #my_log('rerun fragment')
-            #st.rerun(scope="fragment")
+            # when redraw true is returned
+            # main will call display map again with updated selected np_df_selected_index
             redraw = True
             my_log("Disp Map: user clicked, so rerun app")
-            # st.rerun(scope="app")
+
 
     else:
         my_log("Disp Map: st_m2 last active drawing NO val  ")
-
-        # but did user click radio button 
-
-        #if st.session_state['np_radio'] != np_df_selected_index:
-
-        # when user clicks on map value is passed to radio and tabs updated
-        # but map doesn't update -- not sure what triggers a rerun
-        # if user simply moves map, a rerun is triggered, adding the highlight to selected marker
-        # experiment to force rerun on clicking on map...
-        
-        #st.rerun(*, scope="app")
-        # st.rerun(scope="fragment")
-
-        # st.session_state['selected_np'] = selected_np #hm, just in case
 
     return st_m2, np_df_selected_index, redraw
 
 
 
 def display_interesting_links(df_dict):
-    """ External Links to more data about an Org 
+    """ Formats and writes External Links to more data about an Org 
 
     Paramters: df_dict(dict): dictionary with all data for selected nonprofit
 
-    Return:  link_list (list of dicts):  external links
-    Not using return list, just displaying
+    Return:  
+        link_list (list of dicts):  external links, useful explorations
+        Note: currently not using the return value.  
     
     """
     link_list = []
@@ -858,6 +893,8 @@ def get_css_style():
 def my_log(log_msg):
     """ For debugging, save key moments and variables into st.session 
     
+    this is a temp hack as the streamlit -- config.toml stuff seems to be broken?
+
     Parameters:
         log_msg (str): info to save 
 
@@ -941,8 +978,8 @@ def main():
 
 
     # ---- main content area, tabs ----------------
-    map_tab, sum_tab, all_tab, graph_tests = st.tabs(["Map", "Organization Info", 
-                                                        "All Data Elements", "Graph Tests"]
+    map_tab, sum_tab, all_tab, explore = st.tabs(["Map", "Organization Info", 
+                                                        "All Data Elements", "Explore"]
                                                         )
     with map_tab:
         #  ----------- map -----------------------
@@ -1099,12 +1136,21 @@ def main():
         st.subheader("Web Search")
         display_section('Web', 'display_section_all', df_dict, present_lu)
 
-    with graph_tests:
-        my_log("Main:, Graph Tab, entered")
+    with explore:
+        my_log("Main:, Explore Tab, entered")
 
-        # st.subheader(selected_np)
-        st.write("(Info about the geographic area)")
-        show_list = ['coord_x', 'coord_y', 'cb_NAME', 'centracts_NAME', 'cb_GEOID']
+
+        # st.markdown("##### Explore various demographic from other sources")
+        
+        tab_summary_md = """
+                ##### Explore related info and demographics from other sources               
+                - The [Google Data Commons](https://datacommons.org/) project aggregates many datasources
+                - [Census Reporter](https://censusreporter.org/) is a remarkable presentation of Census Data
+        """
+        st.markdown(tab_summary_md)
+
+        st.write ("Links to external sources created using these data elements")
+        show_list = ['NAME', 'coord_x', 'coord_y', 'cb_NAME', 'centracts_NAME', 'cb_GEOID']
         display_arbitrary_list(df_dict, present_lu, show_list)
 
         # build census tract geo id
