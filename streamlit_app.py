@@ -249,16 +249,14 @@ def display_map(np_local_df, tracts_cc_gpd, np_df_selected_index):
     #       map is rendered, user clicks on a nonprofit, and map needs to be updated.
     #       It feels clunky.  
     #       
-    #       [add link to streamlit example of dynamic map updates]
+    #       https://github.com/randyzwitch/streamlit-folium.git
     #       Needs work getting smooth/dynamic map updates and updating sidebar/tabs
     
     #TODO: Review logic of passed vs session np_df_selected_index
     #TODO: then, remove debugging/logging 
 
-    # Main should always pass np_df_selected_index, but 
-    # checking 
+    # Main should always pass np_df_selected_index, but checking 
         
-    # check session state 
     if 'np_df_selected_index' in st.session_state:
         
         if np_df_selected_index != st.session_state['np_df_selected_index']:
@@ -299,11 +297,18 @@ def display_map(np_local_df, tracts_cc_gpd, np_df_selected_index):
     ein_to_present_num = {}  # temp workaround
 
     for index, row in np_local_df.sort_values('NAME').iterrows():
+        
+        # highlight selected nonprofit and get new map center
+        # if user selected a cluster, save cluster lat lng
+        # to match cluster marker creation  
+        
         num = index
         present_num = "(" + str(num) + ") "
         if num == np_df_selected_index:
             color="#FF00AA"
             center = [  row['coord_y'], row['coord_x'] ]
+            if row['cluster_ind'] > 0:
+                center = [  row['cluster_lat'], row['cluster_lng'] ]
 
         else:
             color=""
@@ -337,7 +342,7 @@ def display_map(np_local_df, tracts_cc_gpd, np_df_selected_index):
         else:
             orgs_no_address.append([index, row.NAME, row.STREET])
 
-    #"""
+    # now, put markers for co-located or close NPs
     for mark_group in colocated_markers:        
         num_markers = str(len( colocated_markers[mark_group]))
         pop_msg = num_markers + " NPs at same or close location " 
@@ -348,6 +353,10 @@ def display_map(np_local_df, tracts_cc_gpd, np_df_selected_index):
         lng = colocated_markers[mark_group][0]['cluster_lng']
         mark_loc = [lat, lng]
 
+        if center == mark_loc:
+            color = "#FF00AA"
+        else: 
+            color = "#fff6f1"
 
         for mark_row in colocated_markers[mark_group]:
             present_num = ein_to_present_num[str(mark_row.EIN)]
@@ -357,7 +366,7 @@ def display_map(np_local_df, tracts_cc_gpd, np_df_selected_index):
             tool_msg += f" <br> {present_num} {mark_row.NAME }"
 
         folium.Marker(mark_loc,    
-                     icon= number_DivIcon(" #fff6f1", "M"),
+                     icon= number_DivIcon(color, "M"),
                     popup= folium.Popup(pop_msg, max_width=300), 
                     tooltip = tool_msg
 
