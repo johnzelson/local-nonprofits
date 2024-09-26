@@ -23,6 +23,7 @@ from folium.features import DivIcon  #TODO: move import
 import csv
 import re
 import math
+from datetime import datetime
 
 import streamlit.components.v1 as components
 
@@ -41,16 +42,15 @@ APP_SUB_TITLE = 'Source:  IRS Tax Returns and APS for Census, Congress, Bing '
 
 
 def radio_change():
-    st.sidebar.write('hit radio change ')
+    """ callback after list of NPs in left panel is updated """
+
+    my_log("Sidebar: Radio Change def entered")
 
     np_radio_change = str(st.session_state['np_radio'])
-
-    st.session_state['app_actions'].append("User Changed Radio Button to " + np_radio_change)
     
-    st.sidebar.write (st.session_state['np_radio'])
+    # st.sidebar.write (st.session_state['np_radio'])
     st.session_state['np_df_selected_index'] = np_radio_change
-    # st.rerun()
-
+    my_log("User Change saved to session, index: " + np_radio_change)
 
 
 def do_sidebar (np_local_df, np_df_selected_index):
@@ -62,42 +62,36 @@ def do_sidebar (np_local_df, np_df_selected_index):
                                 (radio button is zero-indexed, 1 less then df index)
 
     """
+    my_log("Sidebar: entered")
 
-    add_to_debug = "\n ##### do sidebar "
-
-    add_to_debug += "\n (status of index, passed, session?)"
-
+    #TODO: cleanup!
     if 'np_df_selected_index' in st.session_state:
-        add_to_debug += "\n - Sidebar: Arr in sidebar session np df select ind: " + str(st.session_state['np_df_selected_index'])
-
+        my_log("Sidebar: Arr in sidebar session np df select ind: " + str(st.session_state['np_df_selected_index']))
     elif pd.isna(np_df_selected_index):
-        add_to_debug += "\n - Arr sidebar pd null select ind passed from map -  set to 1"
         np_df_selected_index = 1
     elif math.isnan(np_df_selected_index):
-        add_to_debug += "\n -Arr sidebar math isnan np select passed from map -  set to 1" 
         np_df_selected_index = 1
-    else:
-        add_to_debug += "\n - Arr sidebar passed " + str(np_df_selected_index)
+    
 
     if not np_df_selected_index:
-        add_to_debug += "\n - Arr sidebar not np select -- set to 1"
         np_df_selected_index = 1
 
     if np_df_selected_index == '':
-        add_to_debug += "\n - Arr sidebar np select two single quotes -- set to 1"
         np_df_selected_index = 1
 
-    add_to_debug += "\n - Arr sidebar np select passed:" + str(np_df_selected_index)
+    my_log("Arr sidebar np select passed:" + str(np_df_selected_index))
     
-
     np_df_selected_index = int(np_df_selected_index)
+
+    my_log("Sidebar: using index: " + str(np_df_selected_index))
+
 
     with st.sidebar:
 
         nonprofits_tab, selected_tab, help_tab, status_tab = st.tabs(["Nonprofits", "Selected", "Help", "Status"])
 
         with nonprofits_tab:
-            
+            my_log("Sidebar: Nonprofits tab, entered")
             if 'np_dict' in st.session_state:
                 np_dict = st.session_state['np_dict']
             else:
@@ -118,63 +112,33 @@ def do_sidebar (np_local_df, np_df_selected_index):
             
             # , help="help"
 
-            if np_df_selected_index:
-                add_to_debug += "\n - Sidebar: np_def_sel exists " # + str(np_df_selected_index)
-            else:
-                add_to_debug += "\n - Sidebar: np_def_sel NOT exists, set to 1"
+            if not np_df_selected_index:
                 np_df_selected_index = 1
-                                
-                            #on_change=None, args=None, kwargs=None, *, 
-                            # disabled=False, horizontal=False, captions=None, label_visibility="visible")
 
             st.session_state['np_df_selected_index'] = np_df_selected_index 
 
-            # xxx TODO: check whether this is required
-            #if 'last_object_clicked_tooltip' in m:
-            #    st.write ("last map click:  ",  m['last_object_clicked_tooltip'])
-            #    st.write ("radio select:  ", np_df_selected_index)
-            #else:
-            #    st.write("no m")
+        with selected_tab:
+            my_log("Sidebar: Selected tab, entered")
+            st.header("Selected")
 
-    with selected_tab:
-        st.header("Selected")
-        # st.write(np_df_selected_index)
+            st.write (np_local_df.filter(items=[np_df_selected_index], axis=0).T)
 
-        st.write (np_local_df.filter(items=[np_df_selected_index], axis=0).T)
+        with help_tab:
+            my_log("Sidebar: Help tab, entered")
+            st.write ('help')
 
-    with help_tab:
-        st.write ('help')
+            st.write("Where is data from how to use, etc")
 
-        st.write("Where is data from how to use, etc")
-
-        st.write(f"Number of Nonprofits: {st.session_state.num_rows}")
-        st.write(f"Data Elements for each Nonprofit: {st.session_state.num_facts}")
+            st.write(f"Number of Nonprofits: {st.session_state.num_rows}")
+            st.write(f"Data Elements for each Nonprofit: {st.session_state.num_facts}")
 
 
-    with status_tab:
-        st.write ('status - debugging')
+        with status_tab:
+            my_log("Sidebar: Status tab, entered")
+            st.write ('status - debugging')
 
-    return np_df_selected_index, add_to_debug
-
-
-
-#TODO: don't need df, yes?
-def get_map_popup(row, df) :
-    """ Returns HTML for map popup when user clicks on a Nonprofit """
-
-    #TODO: remove, obsolete
-    # st.session_state['selected_np'] = row.NAME
-
-    return (f'<div>'
-    f'<table class="table table-striped table-hover table-condensed table-responsive">'
-    f'<tr> '
-    f"<td> Name:</td> <td>  {row.NAME} </td> "
-    f'</tr> '
-    f'<tr> '
-    f"<td> Post Addr:</td> <td> {row.STREET}, {row.CITY} </td> "
-    f'</tr> </table>')
-
-# ----- end get popup
+    my_log("Sidebar: Ending, return index: " + str(np_df_selected_index))
+    return np_df_selected_index
 
     
 def number_DivIcon(color,number):
@@ -182,7 +146,7 @@ def number_DivIcon(color,number):
 
     Parameters:
         color(str): 
-        number(): what number
+        number(str): what text topresent on marker
 
     Return:  icon
 
@@ -230,194 +194,9 @@ def number_DivIcon(color,number):
         )
     return icon
 
-def update_selected_marker(np_df_selected_index):
-    """ update selected marker in sessions """
 
-    add_debug = "\n ###### In updated selected marker  "
-    add_debug += "\n - passed np_df_sel..." + str(np_df_selected_index)
-
-    
-
-    # np_df_selected_index = 2
-    
-    if np_df_selected_index in st.session_state:
-        np_df_selected_index = st.session_state['np_df_selected_index']
-        add_debug += "\n - got from session state " + str(np_df_selected_index)
-        
-    elif np_df_selected_index == None:
-        add_debug += "\n - um, None, so set to 1"
-        np_df_selected_index = 1
-    #elif math.isnan(np_df_selected_index):
-    #    add_debug += "\n -not a number na by math"
-    elif np_df_selected_index == '':
-        add_debug += "\n - np df sel is empty, set to 1"
-        np_df_selected_index = 1
-    
-    else:
-        add_debug += "\n - " + str(np_df_selected_index)
-
-    marker_index = np_df_selected_index - 1
-    # st.write ("this one: ", marker_index)
-    st.session_state["markers"][marker_index] = folium.Marker([422, -76.2],    
-                icon= number_DivIcon(" #fff6f1", "HEY"),
-            #popup= folium.Popup(pop_msg, max_width=300), 
-            tooltip = "added one")
-    
-    return add_debug 
-
-def load_markers(np_local_df, tracts_cc_gpd, np_df_selected_index):
-    """ loading markers into session """
-
-    add_to_debug = "\n ##### in Load Markers "
-
-    st.session_state['app_actions'].append("load markers")
-
-    # Initialize markers inside of session state
-    if "markers" not in st.session_state:
-        st.session_state["markers"] = []
-
-    if 'np_df_selected_index' in st.session_state:
-        np_df_selected_index = st.session_state['np_df_selected_index']
-
-
-    colocated_markers = {}
-    
-    num = 0
-    
-    #nps2 = folium.FeatureGroup(name="NPs")
-    #addme = folium.FeatureGroup(name="addme")
-    #colocated = folium.FeatureGroup(name="Colocated")
-
-    orgs_no_address = []
-
-    #TODO: no longer need this work around
-    ein_to_present_num = {}  # temp workaround
-
-    for index, row in np_local_df.sort_values('NAME').iterrows():
-        num = index
-        present_num = "(" + str(num) + ") "
-        
-        #if num == np_df_selected_index:
-        if num == 5:
-            color="#FF00AA"
-        else:
-            color=""
-
-
-        #TODO: ugh, temp workaround to map each co-located ein to a NP number
-        ein_str = str(row.EIN)
-        ein_to_present_num[ein_str] = present_num
-
-        if not math.isnan(row['coord_x']):  # the data has po boxes with no lat long
-            if (row.cluster_ind == 0):  # it's not a cluster
-
-                pop_msg = present_num +  row.NAME 
-                pop_msg += "<br>" + row.STREET
-                pop_msg += "<br> x: " + str(row.coord_x) +  "<br>  y:  " + str(row.coord_y) 
-
-                st.session_state["markers"].append(folium.Marker(
-                    location=[  row['coord_y'], row['coord_x'] ],
-                    icon= number_DivIcon(color,num),
-                    popup= folium.Popup(pop_msg, max_width=300), 
-                    tooltip = present_num + row.NAME
-                ))
-            else:
-                # save aside info about co-located or close orgs
-                ngroup = str(int(row.cluster_ngroup))
-                if ngroup not in colocated_markers:
-                    colocated_markers[ngroup] = [] 
-
-                #TODO: investigate this data structure 
-                colocated_markers[ngroup].append(row) 
-                
-        else:
-            orgs_no_address.append([index, row.NAME, row.STREET])
-
-    #"""
-    for mark_group in colocated_markers:        
-        num_markers = str(len( colocated_markers[mark_group]))
-        pop_msg = num_markers + " NPs at same or close location " 
-        tool_msg = num_markers + " NPs at same or close location "
-
-        #  lat/lng for cluster marker
-        lat = colocated_markers[mark_group][0]['cluster_lat']
-        lng = colocated_markers[mark_group][0]['cluster_lng']
-        mark_loc = [lat, lng]
-
-        for mark_row in colocated_markers[mark_group]:
-            present_num = ein_to_present_num[str(mark_row.EIN)]
-            pop_msg += f" <P> {present_num} {mark_row.NAME} <br>"
-            pop_msg += f"{mark_row.STREET}  </P>"
-    
-            tool_msg += f" <br> {present_num} {mark_row.NAME }"
-
-            st.session_state["markers"].append(folium.Marker(mark_loc,    
-                     icon= number_DivIcon(" #fff6f1", "M"),
-                    popup= folium.Popup(pop_msg, max_width=300), 
-                    tooltip = tool_msg
-                ))
-        
-        # """
-
-    return  add_to_debug
-
-def do_map(np_df_selected_index):
-    add_debug = "\n ##### Arr do map " 
-    add_debug += "\n - np_df_sel passed " + str(np_df_selected_index)
-
-    m2 = folium.Map(
-        location=[42.54043355305221,-76.1342239379883],
-        zoom_start=11,
-        key="my_np_map"
-    )
-    if 'np_df_selected_index' in st.session_state:
-        np_df_selected_index = int(st.session_state['np_df_selected_index'])
-        add_debug += "\n - np_sel_ is session " + str(st.session_state['np_df_selected_index'])
-    else:
-        add_debug += "\n - Um, not in session so setting to 1"
-        np_df_selected_index = 1
-
-    fg = folium.FeatureGroup(name="Markers")
-    t_fg = folium.FeatureGroup(name="Test Add")
-
-    for marker in st.session_state["markers"]:
-        fg.add_child(marker)
-
-    #for marker_index, marker in enumerate(st.session_state["markers"]):
-    #    fg.add_child(marker)
-
-    # render map, save data to st_m2    
-    st_m2 = st_folium(
-        m2,
-        # center=st.session_state["center"],
-        zoom=11,
-        key="new",
-        feature_group_to_add=fg,
-        height=550,
-        width=700
-    )
-
-
-
-    st.session_state['app_actions'].append("Rendered Map from session")
-
-    if st_m2['last_object_clicked_tooltip']:
-        add_debug += "\n - do_map:  st_m2 tooltip returned " + st_m2['last_object_clicked_tooltip']
-
-        # get the tooltip to know which NP was selected
-        #add_debug += "\n - Do Map Session Toolip " + st.session_state["last_object_clicked_tooltip"]
-        selected_np_tooltip =  st_m2["last_object_clicked_tooltip"]
-        
-        # extract the key from parantheses 
-        np_df_selected_index = selected_np_tooltip[selected_np_tooltip.find("(")+1:selected_np_tooltip.find(")")]
-        add_debug += "\n - Do Map: Toolip  map click: " + selected_np_tooltip
-        add_debug += "\n - Do Map: Extracted Index: " + str(np_df_selected_index)
-
-
-    return st_m2, np_df_selected_index, add_debug
-
-
-def display_map_new(np_local_df, tracts_cc_gpd, np_df_selected_index):
+#test of using @st.fragment
+def display_map(np_local_df, tracts_cc_gpd, np_df_selected_index):
     """ redoing map 
     
     adding numbers for markers
@@ -426,29 +205,39 @@ def display_map_new(np_local_df, tracts_cc_gpd, np_df_selected_index):
     Returns:
         st_m2, np_df_selected_index
     """
+    my_log("Disp Map: entered")
     
-    add_debug = "\n ##### display map new "
+    redraw = False
 
-    # is there a selected nonprofit?
-    
-    add_debug += "\n - Disp Map: passed np df... " + str(np_df_selected_index)
-    
+    # is there a selected nonprofit?  Main will always pass
+        
     # check session state 
     if 'np_df_selected_index' in st.session_state:
+        
         if np_df_selected_index != st.session_state['np_df_selected_index']:
-            add_debug += "\n - Disp Map: session index different from passed"
+            my_log("Disp Map: session index different from passed")
 
         np_df_selected_index = st.session_state['np_df_selected_index']
-        add_debug += "\n - map new: np sel in session " + str(np_df_selected_index)
+        my_log("Disp Map new: np sel in session " + str(np_df_selected_index))
 
+    if 'np_list' in st.session_state:
+        np_list = st.session_state['np_list']
+
+    #TODO:  review where np_df_selected_index is read from session, etc.  should always be integer
+    np_display_nbr = "(" + str(np_df_selected_index) + ") " 
+    np_list_index = int(np_df_selected_index) - 1
+    np_org_name = np_list[np_list_index]
+    st.write (np_display_nbr + np_org_name)
 
     colocated_markers = {}
+
+    my_log("Disp Map: define m2  ")
     
+    center = [42.54043355305221,-76.1342239379883]
     num = 0
     m2 = folium.Map(
-        location=[42.54043355305221,-76.1342239379883],
-        zoom_start=11,
-        key="my_np_map"
+        #location=center,
+        zoom_start=11
     )
     
     nps2 = folium.FeatureGroup(name="NPs")
@@ -457,7 +246,7 @@ def display_map_new(np_local_df, tracts_cc_gpd, np_df_selected_index):
 
     orgs_no_address = []
 
-    #TODO: no longer need this work around
+    #TODO: review workaround.  should not need 
     ein_to_present_num = {}  # temp workaround
 
     for index, row in np_local_df.sort_values('NAME').iterrows():
@@ -465,10 +254,12 @@ def display_map_new(np_local_df, tracts_cc_gpd, np_df_selected_index):
         present_num = "(" + str(num) + ") "
         if num == np_df_selected_index:
             color="#FF00AA"
+            center = [  row['coord_y'], row['coord_x'] ]
+
         else:
             color=""
 
-        #TODO: ugh, temp workaround to map each co-located ein to a NP number
+        #TODO: temp workaround to map each co-located ein to a NP number
         ein_str = str(row.EIN)
         ein_to_present_num[ein_str] = present_num
 
@@ -532,38 +323,42 @@ def display_map_new(np_local_df, tracts_cc_gpd, np_df_selected_index):
     folium.LayerControl(collapsed=False).add_to(m2)
    
     # call to render Folium map in Streamlit
-    st_m2 = st_folium(m2, width=725)
-    st.session_state['app_actions'].append("Rendered Map")
+    st_m2 = st_folium(m2, 
+                      width=725, 
+                      height=425,
+                      center=center,
+                    key="my_np_map",
+                    zoom=12    
+                      )
+    my_log("Disp Map: Rendered Map")
 
     #  st.markdown("#### Orgs with address that didn't **geocode**")
     #  st.table(orgs_no_address)
 
     if 'last_object_clicked_tooltip' in st_m2:
-        add_debug += "\n - last obj tt in st_mt"
+        my_log("Disp Map: Last Obj Click TT in st m2")
         if st_m2["last_object_clicked_tooltip"]:
-            add_debug += "\n - st_m2 has tooltip has val:  " +  st_m2["last_object_clicked_tooltip"]
-        else:
-            add_debug += "\n - st_m2 has tooltip has NO val "
+            my_log("Disp Map: Last Obj Click TT, st_m2: " + st_m2["last_object_clicked_tooltip"])
 
-    # selected_np_index = 0
+        else:
+            my_log("Disp Map: st_m2 has tooltip has NO val ")
+
+    #TODO: combine these two if... both conditions indicated user clicked map, yes?
     if st_m2['last_active_drawing']:
         # get the tooltip to know which NP was selected
-        add_debug += "\n - Disp Map: st_m2 has last active drawing"
         selected_np_option =  st_m2["last_object_clicked_tooltip"]
         
         # extract the key from parantheses 
         map_selected_index = selected_np_option[selected_np_option.find("(")+1:selected_np_option.find(")")]
-        add_debug += "\n - Disp Map: In Map, last active drawing:  selected np in map click: " + selected_np_option
-        add_debug += "\n - Disp Map: map selected np index in map click: " + str(map_selected_index)
+        my_log("Disp Map: In Map, last active drawing:  selected np in map click: " + selected_np_option)
+        my_log("Disp Map: map selected np index in map click: " + str(map_selected_index))
 
 
         # did user click map
         if map_selected_index != np_df_selected_index:
-            add_debug += "\n - Disp Map: Map selected different"
-            add_debug += "\n - REDRAW here..."
             
-            
-            add_debug += "\n - saving new np_df... "
+            my_log("Disp Map: map selected (" + str(map_selected_index) + ") index " + str(np_df_selected_index))
+            my_log("saving new np_df... ")
             np_df_selected_index = map_selected_index
             st.session_state['np_df_selected_index'] = np_df_selected_index
             #st_m2 = st_folium(m2, zoom=9, width=725)
@@ -573,19 +368,18 @@ def display_map_new(np_local_df, tracts_cc_gpd, np_df_selected_index):
             #    zoom=8
             #)
 
-
-            st.rerun()
-
+            #my_log('rerun fragment')
+            #st.rerun(scope="fragment")
+            redraw = True
+            my_log("Disp Map: user clicked, so rerun app")
+            # st.rerun(scope="app")
 
     else:
-        add_debug += "\n - st_m2 last active drawing NO val  "
+        my_log("Disp Map: st_m2 last active drawing NO val  ")
+
         # but did user click radio button 
 
-
         #if st.session_state['np_radio'] != np_df_selected_index:
-        #    add_debug += "\n - Disp Map:  radio does not equal map received index"
-
-
 
         # when user clicks on map value is passed to radio and tabs updated
         # but map doesn't update -- not sure what triggers a rerun
@@ -597,62 +391,9 @@ def display_map_new(np_local_df, tracts_cc_gpd, np_df_selected_index):
 
         # st.session_state['selected_np'] = selected_np #hm, just in case
 
-    return st_m2, np_df_selected_index, add_debug
+    return st_m2, np_df_selected_index, redraw
 
 
-#TODO: remove after salvage
-def display_map(np_local_df, tracts_cc_gpd):
-    """ Draws Map.  Returns st_map and selected nonprofit """
-    import math
-
-    m = folium.Map(
-        location=[42.5,-76],
-        #center=[42.5,-76],  # returns world map vs location
-        zoom_start=10,
-    )
-        # key="np_map"
-    #)
-
-    # you can pass gdf to geojson
-    folium.GeoJson(tracts_cc_gpd,
-                fill_opacity=0.1,
-                highlight=True,
-                popup=folium.GeoJsonPopup(fields=['NAME']),
-                name="Census Tracts").add_to(m)
-    
-    nps = folium.FeatureGroup("NPs").add_to(m)
-
-
-    for index, row in np_local_df.iterrows():
-
-        if not math.isnan(row['coord_x']):  # the data has po boxes with no lat long
-
-            folium.CircleMarker(
-            #folium.Marker(    
-                location=[  row['coord_y'], row['coord_x'] ],
-                fill=True,
-                # color = '#4cdc7c',
-                highlight= True,                
-                popup=folium.Popup(get_map_popup(row, np_local_df), max_width=300),
-                tooltip = row.NAME,
-                #radius=15,
-                # fill_color="#3db7e4"
-                ).add_to(nps)
-
-    folium.LayerControl().add_to(m)
-
-
-    st_map  = st_folium(m, 
-                        width=700) #, returned_objects=["last_object_clicked"])
-    
-        
-    if st_map['last_active_drawing']:
-        #state_name = st_map['last_active_drawing']['properties']['name']
-        selected_np =  st_map["last_object_clicked_tooltip"]
-        st.write ("selected np in map click: " + selected_np)
-        st.session_state['selected_np'] = selected_np #hm, just in case
-
-    return selected_np, st_map # experiment to return map...
 
 def display_interesting_links(df_dict):
     """ External Links to more data about an Org 
@@ -1033,7 +774,7 @@ def get_np_dict(np_local_df):
         np_local_df (dataframe): dataframe with all the NP Info
 
     Returns: 
-        np_dict(dict):  
+        np_dict(dict):  key is the index, value is the org name
     
     """
     
@@ -1100,7 +841,6 @@ def get_css_style():
                 border-collapse: collapse; 
                 width: 100%;
                 border: 1px;
-
             }
 
             .my_cell_section {
@@ -1115,28 +855,49 @@ def get_css_style():
 
     return my_css
 
+def my_log(log_msg):
+    """ For debugging, save key moments and variables into st.session 
+    
+    Parameters:
+        log_msg (str): info to save 
+
+    Returns:  None
+
+    """
+
+    now = datetime.now()
+    ds = now.strftime("%H:%M:%S%f")
+    st.session_state['app_actions'].append(ds + " - " + log_msg)
+
+
 def main():
     st.set_page_config(APP_TITLE)
     st.title(APP_TITLE)
     st.caption(APP_SUB_TITLE)
 
-    # setup styles for used in HTML tables of data and tooltips
     
-    debug_msg = "#### starting main"
+    # setup debugging (trying to use config toml is broken) 
+    if 'app_actions' not in st.session_state:
+        st.session_state['app_actions'] = []
+        my_log('Create app_actions')
+
+    my_log("starting Main(T1)")
+
+    # setup styles for used in HTML tables of data and tooltips
     css_table = get_css_style()
     st.markdown (css_table, unsafe_allow_html=True)
-    debug_msg += "\n - Main: got and printed css"
     
     # load data
     
     # pre-processed in google colab
     # doesn't change, so put into streamlit cache
 
-    debug_msg += "\n - Main: load cache data"
+    my_log("Main: load cache")
     # populate dataframe of local NPs and put into streamlit cache
     np_local_df = get_np_local_df()
 
-    # create dictionary with index and org name for radio selection 
+    #TODO: check whether np_list would suffice
+    # create dictionary with index and org name as convenience for radio selection 
     np_dict = get_np_dict(np_local_df)
 
     # tracts for new york, filter to cortland county
@@ -1147,128 +908,88 @@ def main():
     present_lu = get_present_lu()
 
 
-    # Initialize session data
+    # Setup Session data
 
+    # Arriving with selected nonprofit in session?    
     if 'np_df_selected_index' in st.session_state:
         np_df_selected_index = int(st.session_state['np_df_selected_index'])
-        debug_msg += "\n - Main:  Init, index in session: " + str(np_df_selected_index)
+        my_log("Main: Index is in Session with val " + str(np_df_selected_index) )
+
     else:
         np_df_selected_index = 1
-        debug_msg += "\n - Main: Init, index NOT in session, set to 1, saved to session"
         st.session_state['np_df_selected_index'] = np_df_selected_index
-    
-
-    debug_msg += "\n - Main: confirm index in Session: " + str(st.session_state['np_df_selected_index'])
+        my_log("Main: Index NOT in Session, set to 1 "  )
 
 
     #TODO: review - probably doesn't need session state 
     st.session_state['np_dict'] = np_dict
 
-    #TODO: remove this, new plumbing
     #TODO: check-why put in session state? just put in sidebar?
+    # np_list:alphabetized/ordered list of nonprofits
     if 'np_list' not in st.session_state:
         np_list = list(np_local_df['NAME'])
         np_list.sort()
         st.session_state['np_list'] = np_list
 
-    if 'num_nps' not in st.session_state:
+    if 'num_rows' not in st.session_state:
         (num_rows, num_facts) = np_local_df.shape
         st.session_state['num_rows'] = num_rows
         st.session_state['num_facts'] = num_facts
 
     
-    if 'app_actions' not in st.session_state:
-        st.session_state['app_actions'] = []
-        st.session_state['app_actions'].append('Create app_actions')
-
-    st.session_state['app_actions'].append('Running_main')
-
-
-    # ----- was the map just clicked?
-
-    if "last_object_clicked" not in st.session_state:
-        st.session_state["last_object_clicked"] = None
-        debug_msg += "\n - Main: last object clicked set to None in session"
-
+    my_log("Main: after session init "  )
 
 
     # ---- main content area, tabs ----------------
     map_tab, sum_tab, all_tab, graph_tests = st.tabs(["Map", "Organization Info", 
                                                         "All Data Elements", "Graph Tests"]
                                                         )
-
     with map_tab:
         #  ----------- map -----------------------
         
-        debug_msg += "\n - Main: map tab, start"        
-        
+        my_log("Main: Map Tab, start" )
       
         if 'np_radio' in st.session_state:
-            debug_msg += "\n - Main: map tab, Radio in session " + str(st.session_state ['np_radio'])
-
-        #if 'markers' not in st.session_state:
-        #    add_debug = load_markers(np_local_df, tracts_cc_gpd, 4)
-        #    debug_msg += "\n - loaded markers into session"
-        #else:
-        #    debug_msg += "\n - markers in session "
-        #    add_debug = update_selected_marker(np_df_selected_index)
-        #    debug_msg += add_debug
-
-        debug_msg += "\n - Main: map tab, index: " + str(np_df_selected_index)
-
-        debug_msg += "\n - Main: map tab, go do map"
-        #(st_m2, np_df_selected_index, add_debug) = do_map(np_df_selected_index)
-        #debug_msg += add_debug
-
-        (st_m2, np_df_selected_index, add_debug ) = display_map_new(np_local_df, tracts_cc_gpd, np_df_selected_index)
-        debug_msg += add_debug
-        debug_msg += "\n - Main: map new returned index "+ str(np_df_selected_index)
-
-        # (st_m2, np_df_selected_index, add_debug ) = display_map_new(np_local_df, tracts_cc_gpd, np_df_selected_index)
+            my_log("Main: Map tab, np_radio is in session " + str(st.session_state ['np_radio']))
         
-        
-        #if st_m2['last_object_clicked_tooltip']:
-        #    debug_msg += "\n - HEY tooltip returned " + st_m2['last_object_clicked_tooltip']
+        my_log("Main: Map Tab, go do Map with index: " + str(np_df_selected_index))
 
-        debug_msg += "\n - Main: map tab, now go do sidebar"
-        # selected_np = do_sidebar(np_local_df, selected_np, st_map)
-        (np_df_selected_index, add_debug) = do_sidebar(np_local_df, np_df_selected_index)
-        debug_msg += add_debug
+        # Render Map of NP Markers. 
+        (st_m2, np_df_selected_index, redraw ) = display_map(np_local_df, tracts_cc_gpd, np_df_selected_index)
+        my_log("Main: Map Tab, returned from Map, index: " + str(np_df_selected_index))
 
-        #TODO: when user selects from radio buttons, want to adjust map dynamically
-        # https://folium.streamlit.app/dynamic_map_vs_rerender
-        
-        #st.write(st_map['last_object_clicked']['lat'])
-        #st.write(st_map['last_object_clicked']['lon'])
-        
-        # update_marker(st_map, [-42, 76])
-        
-        # st_folium(st_map, center=[-42, 76])
-        # st_folium(st_map, location=[42.5,-76])
+        # If user has clicked on map, redraw with new np_df_selected_index
+        if redraw is True:
+            (st_m2, np_df_selected_index, redraw ) = display_map(np_local_df, tracts_cc_gpd, np_df_selected_index)
+                
+        my_log("Main: Map Tab, go do side bar, index: " + str(np_df_selected_index))
 
-        # "center":{
-        # "lat":42.500453028125584
-        # "lng":-76.03500366210939
-
-
-    with sum_tab:
-        # ----- info -----------------------------
-        #st.write("Summary Tab")
-        debug_msg += "\n - Main: sum_tab, start with index: " + str(np_df_selected_index)
-        # get detailed on selected np by index 
+        (np_df_selected_index) = do_sidebar(np_local_df, np_df_selected_index)
+        my_log("Main: Map Tab, returned from sidebar, index: " + str(np_df_selected_index))
 
         # convert the selected nonprofit to dict 
         # https://stackoverflow.com/questions/50575802/convert-dataframe-row-to-dict
         #df_dict = np_local_df.loc[filt].to_dict('records')[0]
 
+        my_log("Main: Sum Tab, create df_dict, index: " + str(np_df_selected_index))
+        
         df_dict = np_local_df.filter(items=[np_df_selected_index], axis=0).to_dict('records')[0]
-        #st.table(df_dict)
+
+
+
+
+    with sum_tab:
+        # ----- info -----------------------------
+        #st.write("Summary Tab")
+        my_log("Main: Sum Tab,  index: " + str(np_df_selected_index))
+
+        # get detailed on selected np by index 
+
+
 
         st.subheader("(" + str(np_df_selected_index) + ") "  + df_dict['NAME'])
 
-
         #TODO: Could Add iteration - list of sections 
-        #eg sects_to_show = ['IRS Business Master File', 'Form 990x', 'Staff and Board']
         
         # sect 1 BMF
         st.markdown('##### Section 1: Business Master File (BMF)')
@@ -1356,6 +1077,7 @@ def main():
 
  
     with all_tab:
+        my_log("Main:, All Tab, entered")
 
         #st.subheader(selected_np)
         st.write("(all data elements)")
@@ -1378,6 +1100,8 @@ def main():
         display_section('Web', 'display_section_all', df_dict, present_lu)
 
     with graph_tests:
+        my_log("Main:, Graph Tab, entered")
+
         # st.subheader(selected_np)
         st.write("(Info about the geographic area)")
         show_list = ['coord_x', 'coord_y', 'cb_NAME', 'centracts_NAME', 'cb_GEOID']
@@ -1502,48 +1226,22 @@ def main():
     
     if 'last_object_clicked_tooltip' in st.session_state:
         # st_m2: #  and st_m2['last_active_drawing']:
-        debug_msg += "\n - Main:  last_object_clicked_tooltip in session"
         # get the tooltip to know which NP was selected
-        debug_msg += "\n - " + st.session_state["last_object_clicked_tooltip"]
         selected_np_tooltip =  st_m2["last_object_clicked_tooltip"]
         
         # extract the key from parantheses 
         np_df_selected_index = selected_np_tooltip[selected_np_tooltip.find("(")+1:selected_np_tooltip.find(")")]
-        debug_msg += "\n - Main: Toolip  map click: " + selected_np_tooltip
-        debug_msg += "\n - Main: Extracted Index: " + str(np_df_selected_index)
+        my_log("Main: Toolip  map click: " + selected_np_tooltip)
+        my_log("Main: Extracted Index: " + str(np_df_selected_index))
 
-        # end test
-
-
+    
+    #debugging info
     if 1 == 0:
-        debug_msg += "\n ##### end main  "
-        st.markdown(debug_msg)
-
-        # see session state at end of application
-        st.write("-- Selected session state at main end -- ")
-        sess_vars=['np_radio', 'np_df_selected_index']
-        for sess_var in sess_vars:
-            if sess_var in st.session_state:
-                st.write(sess_var, st.session_state[sess_var])
-            else:
-                st.write(sess_var + " : Not in Session")
-
-
+        st.markdown('##### App Actions')
         st.write(st.session_state['app_actions'])
 
-        st.write ("--- Bottom of main, writing out st_m2 --- ")
-        if st_m2:
-            st.write ("st_m2, map exists")
-            if 'last_object_clicked' in st_m2:
-                st.write ('last_object_clicked', st_m2['last_object_clicked'])
-                st.write ('last_object_clicked_tooltip', st_m2['last_object_clicked_tooltip'])
-
-
-        st.write("-- all session state at main end -- ")
-        for ss in st.session_state:
-            st.write(ss, st.session_state[ss])
-
-
+        st.markdown('##### All Session Vars')
+        st.write(st.session_state)
 
 
 if __name__ == "__main__":
