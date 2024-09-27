@@ -168,6 +168,10 @@ def do_sidebar (np_local_df, np_df_selected_index):
             my_log("Sidebar: Status tab, entered")
             st.write ('status - debugging')
 
+            st.text_area("debug", value="", height=20, key="debug_info", 
+                         )
+
+
     my_log("Sidebar: Ending, return index: " + str(np_df_selected_index))
     return np_df_selected_index
 
@@ -925,7 +929,7 @@ def main():
     st.set_page_config(APP_TITLE)
     st.title(APP_TITLE)
     st.caption(APP_SUB_TITLE)
-
+    #st.markdown("### Local Nonprofits")
     
     # setup debugging (trying to use config toml is broken) 
     if 'app_actions' not in st.session_state:
@@ -992,10 +996,13 @@ def main():
 
 
     # ---- main content area, tabs ----------------
-    map_tab, sum_tab, all_tab, explore = st.tabs(["Map", "Organization Info", 
-                                                        "All Data Elements", "Explore"]
-                                                        )
-    with map_tab:
+    #map_tab, sum_tab, all_tab, explore = st.tabs(["Map", "Organization Info", 
+    #                                                    "All Data Elements", "Explore"]
+    # 
+    #                                                   )
+    
+    #with map_tab:
+    with st.expander("Map"):
         #  ----------- map -----------------------
         
         my_log("Main: Map Tab, start" )
@@ -1029,8 +1036,8 @@ def main():
 
 
 
-
-    with sum_tab:
+    with st.expander("Organization Details"):
+    #with sum_tab:
         # ----- info -----------------------------
         #st.write("Summary Tab")
         my_log("Main: Sum Tab,  index: " + str(np_df_selected_index))
@@ -1127,8 +1134,8 @@ def main():
         display_section('Web', 'display_section_summary', df_dict, present_lu)
 
 
- 
-    with all_tab:
+    with st.expander("Org Data (for debugging)"):
+    #with all_tab:
         my_log("Main:, All Tab, entered")
 
         #st.subheader(selected_np)
@@ -1151,11 +1158,9 @@ def main():
         st.subheader("Web Search")
         display_section('Web', 'display_section_all', df_dict, present_lu)
 
-    with explore:
+    with st.expander("Explore"):    
+    #with explore:
         my_log("Main:, Explore Tab, entered")
-
-
-        # st.markdown("##### Explore various demographic from other sources")
         
         tab_summary_md = """
                 ##### Explore related info and demographics from other sources               
@@ -1283,6 +1288,8 @@ def main():
 
     # -------------  end of tabs of main content area --------------
 
+
+
     # test check for click as it would have to redraw map??
     
     
@@ -1299,8 +1306,8 @@ def main():
     
     #debugging info
     if 1 == 0:
-        st.markdown('##### App Actions')
-        st.write(st.session_state['app_actions'])
+        #st.markdown('##### App Actions')
+        #st.write(st.session_state['app_actions'])
 
         st.markdown('##### All Session Vars')
         st.write(st.session_state)
