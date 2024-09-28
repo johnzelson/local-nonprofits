@@ -23,6 +23,7 @@ import csv
 import re
 import math
 from datetime import datetime
+import urllib.parse
 
 import streamlit.components.v1 as components
 
@@ -273,19 +274,54 @@ def display_map(np_local_df, tracts_cc_gpd, np_df_selected_index):
     if 'np_list' in st.session_state:
         np_list = st.session_state['np_list']
 
+
+    # TODO: review when df_dict gets created.  inefficient to recreate df_dict here, again
+    df_dict = np_local_df.filter(items=[int(np_df_selected_index)], axis=0).to_dict('records')[0]
+
+
     #TODO:  review where np_df_selected_index is read from session, etc.  should always be integer
+    
+    # setup org num and name
     np_display_nbr = "(" + str(np_df_selected_index) + ") " 
     np_list_index = int(np_df_selected_index) - 1
     np_org_name = np_list[np_list_index]
-    st.write (np_display_nbr + np_org_name)
 
-    # catch when there is no geocode/address
-    # TODO: review when df_dict gets created.  inefficient to recreate df_dict here, again
-    df_dict = np_local_df.filter(items=[int(np_df_selected_index)], axis=0).to_dict('records')[0]
+    # setup link to a google map
+    google_map_base = 'https://www.google.com/maps/search/?'
+    params = {'api': '1', 
+          'query': df_dict['STREET'] + ", " + df_dict['CITY'] + ", " + df_dict['STATE'] + " " + df_dict['ZIP']
+          }
+    g_url =  google_map_base + urllib.parse.urlencode(params)
+    google_link = f"<a href=\"{g_url}\" target=\"_blank\">Google Map Search &#8594;</a>"
+
+
+    # catch when there is no geocode/address, create appropriate google map search 
     if pd.isnull(df_dict['coord_x']):
-        st.write ("This NP address could not be geocoded, no map redraw")
+        st.write (np_display_nbr + np_org_name )
+        st.write ("This organization address could not be geocoded.  ")
+
+        # Census geocoder does not recognize PO Boxes and some adresses 
+        # eg. College Campus Addresses.  Google seeme to find campus addresses 
+        # if address is PO Box, then only use org name in query.
+        # otherwise use address. 
+
+        if df_dict['STREET'].startswith("PO"):
+           params = {'api': '1', 
+                    'query': df_dict['NAME'] + ", " + df_dict['CITY'] + ", " + df_dict['STATE'] + " " + df_dict['ZIP']
+          } 
+
+        g_url =  google_map_base + urllib.parse.urlencode(params)
+        google_link = f"<a href=\"{g_url}\" target=\"_blank\">Google Map Search &#8594;</a>"
+
+        # st.write("Try a google Search: ")
+        st.markdown("Try a " + google_link, unsafe_allow_html=True)
+
+        # no address to map, so just return without drawing
         return '', np_df_selected_index, redraw
-    
+    else:
+        st.markdown(np_display_nbr + np_org_name + "  (" + google_link + ")", unsafe_allow_html=True)
+
+
     colocated_markers = {}
 
     my_log("Disp Map: define m2  ")
@@ -312,8 +348,6 @@ def display_map(np_local_df, tracts_cc_gpd, np_df_selected_index):
         # if user selected a cluster, save cluster lat lng
         # to match cluster marker creation  
         
-        #TODO: if selected NP does have geocoding...
-
         num = index
         present_num = "(" + str(num) + ") "
         if num == np_df_selected_index:
@@ -324,7 +358,8 @@ def display_map(np_local_df, tracts_cc_gpd, np_df_selected_index):
         else:
             color=""
 
-        #TODO: temp workaround to map each co-located ein to a NP number
+        #TODO: Handle Map selection of one NP in colocated marker
+        #TODO: fix this temp workaround to map each co-located ein to a NP number
         ein_str = str(row.EIN)
         ein_to_present_num[ein_str] = present_num
 
@@ -333,13 +368,14 @@ def display_map(np_local_df, tracts_cc_gpd, np_df_selected_index):
 
                 pop_msg = present_num +  row.NAME 
                 pop_msg += "<br>" + row.STREET
-                pop_msg += "<br> x: " + str(row.coord_x) +  "<br>  y:  " + str(row.coord_y) 
+                # pop_msg += "<br> x: " + str(row.coord_x) +  "<br>  y:  " + str(row.coord_y) 
 
                 folium.Marker(
                     location=[  row['coord_y'], row['coord_x'] ],
                     icon= number_DivIcon(color,num),
-                    popup= folium.Popup(pop_msg, max_width=300), 
-                    tooltip = present_num + row.NAME
+                    # popup= folium.Popup(pop_msg, max_width=300), 
+                    # tooltip = present_num + row.NAME
+                    tooltip = pop_msg
                 ).add_to(nps2)
             else:
                 # save aside info about co-located or close orgs
@@ -819,7 +855,7 @@ def get_np_local_df():
     return np_local_df
 
 @st.cache_data
-def get_np_dict(np_local_df):
+def get_np_dict(df):
     """  
     Creates dictionary with org index number and org name.
 
@@ -831,8 +867,8 @@ def get_np_dict(np_local_df):
     
     """
     
-    options = np_local_df.index.values.tolist()
-    np_names = np_local_df['NAME'].values.tolist()
+    options = df.index.values.tolist()
+    np_names = df['NAME'].values.tolist()
     #np_dict = dict(zip(options, np_names))
 
     return dict(zip(options, np_names))
@@ -925,13 +961,25 @@ def my_log(log_msg):
     st.session_state['app_actions'].append(ds + " - " + log_msg)
 
 
+def mult_select_change():
+
+    mult_change = st.session_state['np_mult_lov']
+    
+    st.session_state['np_df_selected_index'] = mult_change
+    my_log("User Muli marker change saved to session, index: " + str(mult_change))
+
+
+
 def main():
-    st.set_page_config(APP_TITLE)
+    st.set_page_config(APP_TITLE) #, layout="wide")
     st.title(APP_TITLE)
     st.caption(APP_SUB_TITLE)
-    #st.markdown("### Local Nonprofits")
     
-    # setup debugging (trying to use config toml is broken) 
+    # setup debugging 
+    # Note: streamlit logging needs fiddling. seems to just stop. 
+    # https://docs.streamlit.io/develop/api-reference/configuration/config.toml#set-configuration-options
+    # --logger.level=debug 2>logs.txt
+
     if 'app_actions' not in st.session_state:
         st.session_state['app_actions'] = []
         my_log('Create app_actions')
@@ -975,7 +1023,6 @@ def main():
         st.session_state['np_df_selected_index'] = np_df_selected_index
         my_log("Main: Index NOT in Session, set to 1 "  )
 
-
     #TODO: review - probably doesn't need session state 
     st.session_state['np_dict'] = np_dict
 
@@ -990,23 +1037,20 @@ def main():
         (num_rows, num_facts) = np_local_df.shape
         st.session_state['num_rows'] = num_rows
         st.session_state['num_facts'] = num_facts
-
     
     my_log("Main: after session init "  )
 
+    # Note: previously implement as tabs, but replaced with expanders
+    # With tabs, the Map did not get updated when it's not in the active/viewed tab
+    #TODO: make a stripped down example to validate
 
-    # ---- main content area, tabs ----------------
-    #map_tab, sum_tab, all_tab, explore = st.tabs(["Map", "Organization Info", 
-    #                                                    "All Data Elements", "Explore"]
-    # 
-    #                                                   )
-    
-    #with map_tab:
+
+    # Note: bug with including markdown in expander title 
     with st.expander("Map"):
         #  ----------- map -----------------------
         
         my_log("Main: Map Tab, start" )
-      
+    
         if 'np_radio' in st.session_state:
             my_log("Main: Map tab, np_radio is in session " + str(st.session_state ['np_radio']))
         
@@ -1035,25 +1079,38 @@ def main():
         df_dict = np_local_df.filter(items=[np_df_selected_index], axis=0).to_dict('records')[0]
 
 
-
     with st.expander("Organization Details"):
-    #with sum_tab:
-        # ----- info -----------------------------
-        #st.write("Summary Tab")
+        # ----- Organization Details -----------------------------
         my_log("Main: Sum Tab,  index: " + str(np_df_selected_index))
-
-        # get detailed on selected np by index 
-
-
 
         st.subheader("(" + str(np_df_selected_index) + ") "  + df_dict['NAME'])
 
-        #TODO: Could Add iteration - list of sections 
+        #TODO: find if marker has multiple and list here, maybe lov..
+        if df_dict['cluster_ind'] > 0:
+            #st.write ("This marker part of cluster:  ", df_dict['cluster_ngroup'] ) 
+            msg = """
+            This organization is co-located or very close to others on Map.
+            Use this selectbox to see details about those orgs.
+            """
+            st.markdown(msg)
+
+            filt = np_local_df['cluster_ngroup'] == df_dict['cluster_ngroup']
+            np_mult = get_np_dict(np_local_df[filt])
+            
+            options = np_local_df[filt].index.values.tolist()
+            sel_index = options.index(np_df_selected_index)
+            np_df_selected_mult = st.selectbox("Select Nonprofit from this location", options=options, 
+                                    format_func=lambda x: "(" + str(x) + ") " + np_mult[x],
+                                    on_change=mult_select_change,
+                                    index=sel_index,
+                                    key='np_mult_lov')
+            
+        #TODO: Could streamline by creating list of sections and iterating 
         
         # sect 1 BMF
         st.markdown('##### Section 1: Business Master File (BMF)')
         st.markdown('''
-                     BMF  | 
+                    BMF  | 
                     [IRS Form 990-series](#section-2-990x) | 
                     [Staff/Board](#section-3-staff-and-board)  |
                     [Census](#section-4-census) |
@@ -1143,7 +1200,7 @@ def main():
         #st.table(org_basics(df_dict, present_lu))
 
         display_section('IRS Business Master File', 'display_section_all', df_dict, present_lu)
- 
+
         #TODO: add check if tax info is in data. if not, print note and skip 
         
         if isinstance(df_dict['filename'], str):
@@ -1157,6 +1214,8 @@ def main():
 
         st.subheader("Web Search")
         display_section('Web', 'display_section_all', df_dict, present_lu)
+
+    #with explore:
 
     with st.expander("Explore"):    
     #with explore:
