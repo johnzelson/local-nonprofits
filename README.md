@@ -12,7 +12,7 @@ Data Sources:
 - Censusreporter
 - Probublica
 
-The data is processed in five google colab notebooks from repository
+The data is processed in five google colab notebooks from [np-colab-notebooks](https://github.com/johnzelson/np-colab-notebooks)
 
 Additional background can be found at (link)
 
