@@ -2,7 +2,7 @@
 
 [![Open in Streamlit](https://static.streamlit.io/badges/streamlit_badge_black_white.svg)](https://local-nonprofits-jzelson.streamlit.app//)
 
-An early draft streamlit app that collects data about nonprofits in a local area in order to learn about community.  
+A streamlit app that presents information about nonprofits in a local area in order to learn about community.
 
 Data Sources:
 - IRS Business Master File (BMF) of "active" nonprofits
@@ -12,7 +12,7 @@ Data Sources:
 - Censusreporter
 - Probublica
 
-The data is processed in several google colab notebooks from [np-colab-notebooks](https://github.com/johnzelson/np-colab-notebooks)
+The data is processed in several google colab notebooks from [np-colab-notebooks](https://github.com/johnzelson/nonprofits-colab)
 
 Additional background can be found at (link)
 
