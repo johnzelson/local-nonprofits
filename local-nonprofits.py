@@ -88,7 +88,7 @@ def do_sidebar (np_local_df, np_df_selected_index):
 
     with st.sidebar:
 
-        nonprofits_tab, selected_tab, help_tab, status_tab = st.tabs(["Nonprofits", "Selected", "Help", "Status"])
+        nonprofits_tab, selected_tab, help_tab = st.tabs(["Nonprofits", "Selected", "Help"])
 
         with nonprofits_tab:
             my_log("Sidebar: Nonprofits tab, entered")
@@ -167,14 +167,6 @@ def do_sidebar (np_local_df, np_df_selected_index):
 
             st.write(f"Number of Nonprofits: {st.session_state.num_rows}")
             st.write(f"Data Elements for each Nonprofit: {st.session_state.num_facts}")
-
-
-        with status_tab:
-            my_log("Sidebar: Status tab, entered")
-            st.write ('status - debugging')
-
-            st.text_area("debug", value="", height=20, key="debug_info", 
-                         )
 
 
     my_log("Sidebar: Ending, return index: " + str(np_df_selected_index))
