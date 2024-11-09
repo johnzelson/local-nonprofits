@@ -14,7 +14,7 @@ Data Sources:
 
 The data is processed in several google colab notebooks from [np-colab-notebooks](https://github.com/johnzelson/nonprofits-colab)
 
-Additional background can be found at (link)
+Additional background can be found at [https://johnzelson.site/mapping-nonprofits/](https://johnzelson.site/mapping-nonprofits/)
 
 ### How to run it on your own machine
 
@@ -27,5 +27,5 @@ Additional background can be found at (link)
 2. Run the app
 
    ```
-   $ streamlit run streamlit_app.py
+   $ streamlit run local-nonprofits.py
    ```
