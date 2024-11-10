@@ -158,7 +158,7 @@ def do_sidebar (np_local_df, np_df_selected_index):
             local needs, finding places to volunteer, or just satisfying curiosity.
 
             #### Additional Background
-            [Local Nonprofits](https://www.johnzelson.org/)
+            [https://johnzelson.site/](https://johnzelson.site/)
 
             #### Similar Projects
             - Giving Tuesday
