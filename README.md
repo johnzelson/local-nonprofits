@@ -14,7 +14,7 @@ Data Sources:
 
 The data is processed in several google colab notebooks from [np-colab-notebooks](https://github.com/johnzelson/nonprofits-colab)
 
-Additional background can be found at [https://johnzelson.site/mapping-nonprofits/](https://johnzelson.site/mapping-nonprofits/)
+Additional background can be found at [https://johnzelson.site/local-nonprofits/](https://johnzelson.site/local-nonprofits/)
 
 ### How to run it on your own machine
 
