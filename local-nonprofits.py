@@ -37,6 +37,8 @@ import streamlit.components.v1 as components
 #from streamlit_elements import dashboard
 
 
+#TODO:  https://www.grantmakers.io/search/grants/?grantee_name=ACCESS+TO+INDEPENDENCE+OF+CORTLAND+COUNTY+INC
+
 APP_TITLE = 'Local Nonprofits'
 APP_SUB_TITLE = 'Source:  IRS Tax Returns and APS for Census, Congress, Bing '
 VERS = '03_01'
